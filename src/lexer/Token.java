@@ -16,12 +16,12 @@ public class Token
     TOKEN_BOOLEAN, // "boolean"
     TOKEN_CLASS, // "class"
     TOKEN_COMMER, // ","
-    TOKEN_DOT, // "."
+    TOKEN_DOT,		// "."
     TOKEN_ELSE, // "else"
-    TOKEN_EOF, // EOF
+    TOKEN_EOF, // EOF  the value is -1
     TOKEN_EXTENDS, // "extends"
-    TOKEN_FALSE, // "false"
-    TOKEN_ID, // Identifier
+    TOKEN_FALSE,    // "false"
+    TOKEN_ID, // Identifier "id"
     TOKEN_IF, // "if"
     TOKEN_INT, // "int"
     TOKEN_LBRACE, // "{"
@@ -44,16 +44,16 @@ public class Token
     TOKEN_RBRACK, // "]"
     TOKEN_RETURN, // "return"
     TOKEN_RPAREN, // ")"
-    TOKEN_SEMI, // ";"
-    TOKEN_STATIC, // "static"
-    TOKEN_STRING, // "String"
-    TOKEN_SUB, // "-"
-    TOKEN_SYSTEM, // "System"
-    TOKEN_THIS, // "this"
-    TOKEN_TIMES, // "*"
-    TOKEN_TRUE, // "true"
-    TOKEN_VOID, // "void"
-    TOKEN_WHILE, // "while"
+    TOKEN_SEMI,     // ";"
+    TOKEN_STATIC,   // "static"
+    TOKEN_STRING,   // "String"
+    TOKEN_SUB,      // "-"
+    TOKEN_SYSTEM,   // "System"
+    TOKEN_THIS,     // "this"
+    TOKEN_TIMES,    // "*"
+    TOKEN_TRUE,     // "true"
+    TOKEN_VOID,     // "void"
+    TOKEN_WHILE,    // "while"
   }
 
   public Kind kind; // kind of the token

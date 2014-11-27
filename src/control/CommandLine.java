@@ -4,14 +4,12 @@ import java.util.LinkedList;
 
 import util.Bug;
 import control.Control.ConSlp;
-
 public class CommandLine
 {
   static interface F<X>
   {
     public void f(X x);
   }
-
   static enum Kind
   {
     Empty, Bool, Int, String, StringList,
@@ -36,12 +34,12 @@ public class CommandLine
     }
   }
 
-  private LinkedList<Arg<Object>> args;
+  private LinkedList< Arg<Object> > args;
 
   @SuppressWarnings("unchecked")
   public CommandLine()
   {
-    this.args = new util.Flist<Arg<Object>>().list(new Arg<Object>("help",
+    this.args = new util.Flist< Arg<Object> >().list(new Arg<Object>("help",
         null, "show this help information", Kind.Empty, (s) -> {
           usage();
           System.exit(1);
@@ -51,7 +49,7 @@ public class CommandLine
           Control.ConLexer.dump = true;
           return;
         }), new Arg<Object>("slp", "{args|interp|compile}",
-        "run the SLP interpreter", Kind.String, (ss) -> {
+        "run the SLP interpreter", Kind.String, (ss) -> {        	
           String s = (String) ss;
 
           if (s.equals("args")) {
@@ -73,6 +71,8 @@ public class CommandLine
         }), new Arg<Object>("testlexer", null,
         "whether or not to test the lexer", Kind.Empty, (s) -> {
           Control.ConLexer.test = true;
+          // 修改action的属性
+          ConSlp.action = ConSlp.T.TEST;
           return;
         }));
   }
