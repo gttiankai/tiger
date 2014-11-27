@@ -1,0 +1,13 @@
+*.class
+bin/*
+/bin
+*.o
+*.dot
+*.bmp
+*.pdf
+*.ps
+*.jpg
+a.out*
+test/*.c
+*.txt
+*~

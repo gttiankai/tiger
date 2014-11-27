@@ -32,11 +32,11 @@ public class Parser {
 		if (kind == current.kind)
 			// take the next Token
 			advance();
-		else {
-			error("syntax error");
+		else {		
 			System.out.println("Expects: " + kind.toString());
 			System.out.println("But got: " + current.kind.toString());
 			System.out.println("\n");
+			error("syntax error");
 			System.exit(1);
 		}
 	}
@@ -50,9 +50,8 @@ public class Parser {
 		System.out.println("\n");
 		System.out.print("Syntax error: compilation aborting...\n");
 		System.out.print(lexer.getLexerFname() + " " + current.lineNum + " :  ");
-		System.out.println("error message: " + errorMessage + "\n");
-		
-		//System.exit(1);
+		System.out.println("error message: " + errorMessage + "\n");		
+		System.exit(1);
 		return;
 	}
 
@@ -154,7 +153,6 @@ public class Parser {
 		}
 		return;
 	}
-
 	// TimesExp -> ! TimesExp
 	// -> NotExp
 	private void parseTimesExp() {
