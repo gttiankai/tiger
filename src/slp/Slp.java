@@ -5,7 +5,7 @@ import java.util.LinkedList;
 public class Slp
 {
   // ////////////////////////////////////////////////
-  // expression
+  // expression 关于表达式的类
   public static class Exp
   {
     // base class
@@ -24,7 +24,7 @@ public class Slp
       }
     }
 
-    // id
+    // id num
     public static class Num extends T
     {
       int num;
@@ -55,7 +55,7 @@ public class Slp
       }
     }
 
-    // Eseq
+    // Eseq 逗号运算符 expression sequence
     public static class Eseq extends T
     {
       public Stm.T stm;
@@ -70,7 +70,7 @@ public class Slp
   }// end of expression
 
   // ////////////////////////////////////////////////
-  // explist
+  // explist  表达式链表
   public static class ExpList
   {
     // base class
@@ -91,8 +91,7 @@ public class Slp
         this.list = list;
       }
     }
-
-    // last
+    // last 最后的表达式
     public static class Last extends T
     {
       public Exp.T exp;

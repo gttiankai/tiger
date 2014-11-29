@@ -3,6 +3,7 @@ class Factorial {
         System.out.println(new Fac().ComputeFac(10));
     }
 }
+
 class Fac {
     public int ComputeFac(int num) {
         int num_aux;

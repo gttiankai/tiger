@@ -1,0 +1,413 @@
+
+<!-- saved from url=(0074)http://staff.ustc.edu.cn/~bjhua/courses/compiler/2014/labs/lab2/index.html -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=GBK">
+<title>Lab 2: Abstract Syntax Tree and Elaboration</title>
+<link rel="stylesheet" href="./Lab 2  Abstract Syntax Tree and Elaboration_files/labs.css" type="text/css">
+<style type="text/css"></style><style id="style-1-cropbar-clipper">/* Copyright 2014 Evernote Corporation. All rights reserved. */
+.en-markup-crop-options {
+    top: 18px !important;
+    left: 50% !important;
+    margin-left: -100px !important;
+    width: 200px !important;
+    border: 2px rgba(255,255,255,.38) solid !important;
+    border-radius: 4px !important;
+}
+
+.en-markup-crop-options div div:first-of-type {
+    margin-left: 0px !important;
+}
+</style></head>
+
+<body youdao="bind">
+<table width="100%">
+<tbody>
+  <tr>
+<td>
+<h1>Lab 2: Abstract Syntax Tree and Elaborator</h1>
+<hr>
+
+<h3>Lab Overview</h3>
+In this lab, you'll
+implement the abstract syntax tree for Tiger, and
+design and implement an elaborator (type checker among others)
+for the abstract syntax tree. This lab consists of two parts:
+in the first part, you'll implement an abstract
+syntax tree for MiniJava, by designing a bunch of Java classes, and also
+you'll add semantic actions to the parser to generate
+abstract syntax trees automatically. In the second part
+of the lab, you'll implement an elaborator for the MiniJava
+language, which will involve symbol table design, type checking, and
+translation, etc..
+
+<h3>Getting Started</h3>
+First check out the start code for this lab:
+<pre>  $ <kbd>git commit -am 'my solution to lab1'</kbd>
+  $ <kbd>git checkout -b Lab2 origin/Lab2
+</kbd></pre>
+which will commit your changes to Lab1 branch
+of the local
+Git repository and create and check out into a new Lab2
+branch from the remote Lab2 branch.
+
+<p>
+You will now need to merge the Lab1 into the Lab2:
+</p><pre>  $ <kbd>git merge Lab1</kbd>
+</pre>
+
+In some cases, Git may not be able to figure out how
+to merge your changes with the new lab assignment
+(e.g. if you modified some of the code that is changed
+in the second lab assignment). In that case, the git
+merge command will report you which files are conflicted,
+and you should first resolve the conflict (by editing
+the relevant files) and then commit the resulting files
+with git commit -a:
+<pre>  $ <kbd>git commit -am 'lab2 init'</kbd>
+</pre>
+
+Lab 2 contains the following new source files, which you should browse through:
+<pre>  src/ast/*:        abstract syntax tree data structure and visitors
+  src/elaborator/*: files relevant to the elaborator
+</pre>
+
+<h3>Hand-in Procedure</h3>
+When you finished your lab, zip you code and submit to the
+<a href="http://mis.sse.ustc.edu.cn/default.aspx">school's information system</a>.
+
+<h1>Part A: Abstract Syntax Tree for MiniJava</h1>
+The sole purpose of a compiler is to process programs
+(which are being compiled). From the concept point
+of view, modern computers are based on the
+<a href="http://en.wikipedia.org/wiki/Von_Neumann_architecture">Von Neumann architecture</a>, of
+which
+the most important feature is the
+<a href="http://en.wikipedia.org/wiki/Stored-program_computer">stored program</a>. That is, the
+program and data being processed must first be stored into
+the memeory, before the processing task can proceed. Compilers are of no
+exceptions: the program being compiled must first be stored
+into the main memory, before the compiler can start to compile
+it.
+
+<p>
+And the question is how. Maybe the most
+straightforward way to do this is to represent the program
+being compiled as a string of character (the program text as
+the programmer writes down), but this
+approach has the obvious drawback that later phases of the 
+compiler would become more compilcated because it's nontrivial
+to recognize program phrase from the string (think how to
+find out whether or a variable <code>x</code> has been declared and where
+if if does. Obviously, this approach may
+involve complex string opereations).
+
+</p><p>
+A much more convenient way to store, in memory, the program
+being compiled is to use some specialized data structures
+from the implementation language. Nevertheless to say, this
+approach is highly implementation language-dependent. For instance,
+the representation technique from using Java would be different
+from that using C or other implementation languages. 
+
+</p><h3>Abstract Syntax Trees as Class Hierarchy</h3>
+We are implementing a compiler for MiniJava using the implementation
+language Java, so we
+use a so-called local class hierarchy technique from Java.
+Essentially, to
+represent a program written in MiniJava, we define a set of
+classes. These classes are grouped in this way: for any production rule
+<pre>  N -&gt; a1 | a2 | ... | an
+</pre>
+there will be an abstract base class <code>CN</code> for
+that nonterminal <code>N</code>. And
+for each production rule of that nonterminal, there will be
+a sub-class inheriting from that abstract base class. For
+instance, in the example above, there will be totally <i>n</i>
+sub-classes for <code>a1</code> to <code>an</code>.
+
+<p>
+As those classes will form
+a tree-like layout in memory, so those classes are called
+an abstract syntax tree data structure. We've
+offered you the classes for defining MiniJava abstract
+syntax trees, and
+you should familiarize yourself with these classes.
+</p><div class="required">
+<p><span class="header">Exercise 1.</span>
+Read the code in the package <code>ast</code> and all
+the subpackage
+prefixed with <code>ast</code> such as <code>ast.exp</code> or
+<code>ast.stm</code> etc.. Refer to the MiniJava reference manual
+to understand how these classes
+correspond to the MiniJava syntax. (For now, just
+ignore the method <code>accept</code> in every class.)
+
+</p><p>
+You may also read chapter 1 and 4 of the Tiger book to
+learn more of local class hierarchy design.
+</p></div>
+
+<h3>Program Representation as Trees</h3>
+Given the data structure definitions for the MiniJava syntax, one
+can (in principle) manually represent any MiniJava program in
+memory, though this method is too boring and error-prone to do
+in everyday programming practice, it does clearly illustrate
+what's going on under the hood. And also this is the dominant
+programming styles in some functional languages, like
+<a href="http://en.wikipedia.org/wiki/Lisp_(programming_language)">Lisp</a>
+or <a href="http://en.wikipedia.org/wiki/Scheme_(programming_language)">Scheme</a>.
+
+<p>
+In the source <code>ast/Fac.java</code>, we've offered you the
+code on the representation of the sample MiniJava
+program <code>test/Fac.java</code> in memory.
+</p><div class="required">
+<p><span class="header">Exercise 2.</span>
+Read the code in the file <code>src/ast/Fac.java</code>, and make sure
+you understand how the program <code>Fac.java</code> is represented
+in memory. Then write some code to represent the MiniJava
+program <code>test/Sum.java</code>.
+</p></div>
+
+<h3>Pretty Printing and Visitor Pattern</h3>
+The manual (or even automatic) approach of
+program representation
+is complex enough, and in order to gain confidence that the
+representation is correct respect to the original program text, we
+would like to double check. The standard
+way to do this is called
+<i><a href="http://en.wikipedia.org/wiki/Prettyprint">pretty printing</a></i>, which
+is a classical algorithmic research topic. 
+
+<p>
+Again, the implementation of pretty printing is highly implementation
+language-dependent. For the Java language, the standard way to
+accomplish this task is to use the so-called 
+<a href="http://en.wikipedia.org/wiki/Visitor_pattern"><i>visitor pattern</i></a>. Chapter
+4 of the Tiger
+book gives an excellent introduction to the visitor
+pattern, you may also refer to some books on
+<a href="http://en.wikipedia.org/wiki/Design_Patterns">design pattern</a>
+to understand how visitor pattern works.
+
+</p><div class="required">
+<p><span class="header">Exercise 3.</span>
+Read again the code in the <code>src.ast</code> package, especially
+these code:
+</p><ul>
+<li><code>src.ast.Visitor.java</code>
+</li><li><code>src.ast.Accceptable.java</code>
+</li><li><code>src.ast.PrettyPrintVisitor.java</code>
+</li></ul>
+Make sure you understand the relationship between these three files.
+
+<p>
+Compile and then run the Tiger compiler:
+</p><pre>  $ <kbd>java Tiger -testFac</kbd>
+</pre>
+<p>
+which will pretty print the program <code>ast/Fac.java</code>,
+However, as you may notice from the output, the result
+for this pretty
+printing is not correct, there are
+three lines of code that are different from the original program text:
+</p><pre>  System.out.println (new Fac().ComputeFac(10, ));
+  public int ComputeFac(int num, )
+  num_aux = num * this.ComputeFac(num - 1, );
+</pre>
+These are actually bugs, detect where these bugs are triggered and
+fix these bugs by modifying code. Don't forget to do
+<a ref="http://en.wikipedia.org/wiki/Regression_test">regression tests</a>.
+</div>
+
+<div class="required">
+<p><span class="header">Exercise 4.</span>
+The current implementation of the pretty printer in
+the file <code>src.ast.PrettyPrintVisitor.java</code> are
+incomplete, i.e., some
+methods come with empty bodies. Complete
+those methods by filling in the missing code.
+</p></div>
+
+<div class="challenge">
+<p><span class="header">Challenge!</span>
+Write another pretty printer <code>src.ast.PrettyPrintCSharpVisitor.java</code>, to
+print out C# code. Does this fact reveal that one can use the same
+abstract syntax tree to represent both Java and C#?
+</p></div>
+
+<div class="challenge">
+<p><span class="header">Challenge!</span>
+The pretty printer in the file <code>src.ast.PrettyPrintVisitor.java</code>, though
+enough for processing MiniJava code, may be not that general
+and powerful. Study some general pretty printing algorithms
+and implement them into your Tiger compilers. For instance, you
+may start with
+<a href="http://homepages.inf.ed.ac.uk/wadler/papers/prettier/prettier.pdf">
+Wadler's</a> printer.
+</p></div>
+
+<h3>Tree Generation</h3>
+The parser can construct the abstract syntax tree automaticall by 
+it's semantic action attached with the parsing methods.
+
+<div class="required">
+<p><span class="header">Exercise 5.</span>
+Modfity the parser <code>src.parser.Parser.java</code> to add
+semantic actions to each parsing method. There is hooking code in
+<code>src.Main.java</code> which will call the new parser and to
+pretty print the parsing result (abstract syntax tree). 
+</p></div>
+To this point, your Tiger compiler can parse all legal 
+MiniJava programs, generate abstract syntax trees and
+performs pretty printing on the trees. Don't forget to
+test your compiler with:
+<pre>  $ <kbd>java Tiger &lt;inputFile&gt; -dump ast</kbd>
+</pre>
+Fix any bugs before you continue.
+
+<div class="challenge">
+<p><span class="header">Challenge!</span>
+If you've done the LALR parser from the previous lab, then
+generate the abstract syntax trees from that parser by adding
+semantic actions.
+</p></div>
+
+<h1>Part B: Elaborator</h1>
+Before continuing to do other operations on the
+abstract syntax trees, one must check these trees
+to ensure they are <i>well-formed</i>. By the terminology
+<i>well-formed</i>, we mean that the input MiniJava program
+must obey <i>all</i> constraint rules specified by the
+MiniJava language specification (in turn by the Java
+specification). Typical rules include: a variable must be
+declared first before its use; the <code>"+"</code> operators
+must apply to two operands of integer type; the methods being
+invoked on an object must have
+been defined in its class or superclass; and so on. All such checking are preformed
+by an <i>elaborator</i> in the Tiger compiler. Note that in the
+literature, there are other names for the elaborator, say
+<i>type checker</i> or <i>semantic analyzer</i>, but we will
+call it an <i>elaborator</i> here in this lab. 
+
+<h3>Symbol Tables</h3>
+Just like the pretty printing, the process of elaboration
+involves some kind of (post-order) tree traversal. However, there
+is a key difference: the elaboration 
+traversal is context-sensitive, thus one have to record
+necessary context information. One can use some tables
+to record these. For historical reason, these tables
+are often called
+<i><a href="http://en.wikipedia.org/wiki/Symbol_tables">symbol tables</a></i>, for
+it associate symbols with their associated informations (such as
+types, scopes, etc..). 
+
+<p>
+The design of the symbol table
+is higly-dependent on the language being compiled. 
+As for MiniJava, there are instance variables and methods in each
+class, so one need one big symbol table, which maps class name
+to its containing variables and methods; we call this table
+the <i>class table</i>. And each method contains
+parameters and locals variables, so one need a symbol table for
+each method which maps parameters or locals to their corresponding
+types (among other informations); we call this table
+the <i>method table</i>.
+
+</p><div class="required">
+<p><span class="header">Exercise 6.</span>
+Read the code in <code>src.elaborator.ClassTable.java</code> for
+the data structure defining the class table. And read the code
+in <code>src.elaborator.MethodTable.java</code> for the
+data structure defining the method table. Draw figures about the
+organization of these tables. 
+
+</p><p>
+It's often the case that one
+need to dump the content the class table or method table
+after they have been created, to make sure that they
+contain everything one need. Now finish the methods <code>dump()</code>
+in both the two table classes for this purpose. Make sure that your Tiger compiler
+compiles with:
+</p><pre>  $ <kbd>java Tiger -elab classTable -elab methodTable &lt;inputFile&gt;</kbd>
+</pre>
+</div>
+
+<h3>Elaboration Rules</h3>
+The elaboration (type checking) is a post-order traversal of
+the abstract syntax tree. For sub-trees, the elaborator returns
+the type of that sub-tree; and for root-node, the elaborator
+compares the types returned from the sub-trees and 
+guarantee the sub-tree types can be combined in some
+proper way. For instance, for the tree representing an addition
+node <i>e1+e2</i>, the elaborator first traverse <i>e1</i> to
+obtain a type <i>t1</i>, and then <i>e2</i> to obtain a type
+<i>t2</i>; at the root node, the elaborator will check that
+both <i>t1</i> and <i>t2</i> are <i>int</i>. 
+Again, these checking rules are language-dependent, and
+for the Java language, these rules are well specified in the
+lanaguage specification.
+<div class="required">
+<p><span class="header">Exercise 7.</span>
+Finish the code in the elaborator <code>src.elaborator.ElaboratorVisitor.java</code>
+by filling the methods which have empty bodies. You may want
+to refer to the Java specification when necessary. But pay
+special attention to the minor differences between Java and
+MiniJava, say overloading is not allowed in MiniJava.
+</p></div>
+To this point, your Tiger compiler can parse and elaborate
+all possible 
+MiniJava programs. Don't forget to
+test your compiler and fix any bugs before you continue.
+
+<h3>Error Handling Recovery</h3>
+It's the elabortor's job to report all possible semantic errors
+to the programmer and to recover from the current error to 
+check as many errors as possible. The error
+handling code in current implementation is very rudimentary in
+that it only reports some information and then aborts.
+<div class="required">
+<p><span class="header">Exercise 8.</span>
+Modify the error reporting method
+<code>error()</code> in
+<code>src.elaborator.ElaboratorVisitor.java</code> to enable
+it to generate more informative error message about the
+error. And also modify it to generate all errors in the
+compiled programs, not just the first one.
+</p></div>
+
+
+<h3>Declaration Site and Use Sites</h3>
+Like many other language, Java obeys a declaration-before-use
+rule, which simply means that for each variable in the program, there
+should be one and only one declaration site for that variable.
+However, it's
+not true for the vice versa: for one variable declaration, there may
+be zero or more number of uses of that variable; if the
+number of the uses is zero, then there is the chance of locating
+an <i>unused variable</i>. A good compiler may generate some error
+message like this one:
+<pre>  Warning: variable "x" declared at line 10 never used
+</pre>
+just as what your Eclipse has always been generating for
+your Java code.
+
+<div class="required">
+<p><span class="header">Exercise 9.</span>
+Modify your Tiger compiler to emit warning messages like the one
+above.
+</p></div>
+
+<h3>Handin</h3>
+This completes the lab. Remember to hand in your solution to 
+the information system.
+
+</td>
+</tr>
+  
+</tbody>
+</table>
+
+
+
+
+</body></html>
