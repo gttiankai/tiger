@@ -1,7 +1,5 @@
 package parser;
 
-import com.sun.org.apache.xpath.internal.operations.And;
-
 import lexer.Lexer;
 import lexer.Token;
 import lexer.Token.Kind;

@@ -1,25 +1,12 @@
 package ast;
 
-import ast.Ast.Dec;
-import ast.Ast.Exp;
-import ast.Ast.Exp.Call;
-import ast.Ast.Exp.Id;
-import ast.Ast.Exp.Lt;
-import ast.Ast.Exp.NewObject;
-import ast.Ast.Exp.Num;
-import ast.Ast.Exp.Sub;
-import ast.Ast.Exp.This;
-import ast.Ast.Exp.Times;
-import ast.Ast.MainClass;
+import ast.Ast.*;
+import ast.Ast.Exp.*;
 import ast.Ast.MainClass.MainClassSingle;
-import ast.Ast.Method;
-import ast.Ast.Program;
 import ast.Ast.Program.ProgramSingle;
-import ast.Ast.Stm;
 import ast.Ast.Stm.Assign;
 import ast.Ast.Stm.If;
 import ast.Ast.Stm.Print;
-import ast.Ast.Type;
 
 public class Fac
 {

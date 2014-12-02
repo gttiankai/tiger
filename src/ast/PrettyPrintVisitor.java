@@ -1,35 +1,10 @@
 package ast;
 
 import ast.Ast.Class.ClassSingle;
-import ast.Ast.Dec;
-import ast.Ast.Exp;
-import ast.Ast.Exp.Add;
-import ast.Ast.Exp.And;
-import ast.Ast.Exp.ArraySelect;
-import ast.Ast.Exp.Call;
-import ast.Ast.Exp.False;
-import ast.Ast.Exp.Id;
-import ast.Ast.Exp.Length;
-import ast.Ast.Exp.Lt;
-import ast.Ast.Exp.NewIntArray;
-import ast.Ast.Exp.NewObject;
-import ast.Ast.Exp.Not;
-import ast.Ast.Exp.Num;
-import ast.Ast.Exp.Sub;
-import ast.Ast.Exp.This;
-import ast.Ast.Exp.Times;
-import ast.Ast.Exp.True;
-import ast.Ast.MainClass;
-import ast.Ast.Method;
+import ast.Ast.*;
+import ast.Ast.Exp.*;
 import ast.Ast.Method.MethodSingle;
-import ast.Ast.Program;
-import ast.Ast.Stm;
-import ast.Ast.Stm.Assign;
-import ast.Ast.Stm.AssignArray;
-import ast.Ast.Stm.Block;
-import ast.Ast.Stm.If;
-import ast.Ast.Stm.Print;
-import ast.Ast.Stm.While;
+import ast.Ast.Stm.*;
 import ast.Ast.Type.Boolean;
 import ast.Ast.Type.ClassType;
 import ast.Ast.Type.Int;
@@ -96,10 +71,12 @@ public class PrettyPrintVisitor implements Visitor
   {
     e.exp.accept(this);
     this.say("." + e.id + "(");
-    for (Exp.T x : e.args) {
-      x.accept(this);
+    for (Exp.T x : e.args) {  
+      x.accept(this); 
       this.say(", ");
     }
+	if (!e.args.isEmpty())
+		this.say("\b\b");	
     this.say(")");
     return;
   }
@@ -278,6 +255,8 @@ public class PrettyPrintVisitor implements Visitor
       dec.type.accept(this);
       this.say(" " + dec.id + ", ");
     }
+    if (!m.formals.isEmpty())
+		this.say("\b\b");
     this.sayln(")");
     this.sayln("  {");
 

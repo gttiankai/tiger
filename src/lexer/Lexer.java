@@ -1,13 +1,12 @@
 package lexer;
 
-import static control.Control.ConLexer.dump;
+import lexer.Token.Kind;
+import util.Bug;
 
 import java.io.IOException;
 import java.io.InputStream;
 
-import lexer.Token.Kind;
-import util.Todo;
-import util.Bug;
+import static control.Control.ConLexer.dump;
 
 public class Lexer {
 	String fname; // the input file name to be compiled

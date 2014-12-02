@@ -1,16 +1,16 @@
-import static control.Control.ConAst.dumpAst;
-import static control.Control.ConAst.testFac;
+import ast.Ast.Program;
+import control.CommandLine;
+import control.Control;
+import lexer.Lexer;
+import lexer.Token;
+import parser.Parser;
 
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.io.InputStream;
 
-import ast.Ast.Program;
-import lexer.Lexer;
-import lexer.Token;
-import parser.Parser;
-import control.CommandLine;
-import control.Control;
+import static control.Control.ConAst.dumpAst;
+import static control.Control.ConAst.testFac;
 
 public class Tiger {
 	public static void main(String[] args) {
