@@ -5,7 +5,6 @@ import java.util.LinkedList;
 public class Ast
 {
 
-  // ///////////////////////////////////////////////////////////
   // type
   public static class Type
   {
