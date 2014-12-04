@@ -244,27 +244,26 @@ public class PrettyPrintVisitor implements Visitor
   @Override
   public void visit(If s)
   {
-    this.autoIndent();
     this.indent();           // +
     this.say("if (");
     s.condition.accept(this);// Exp :: condition
-    this.sayln(")");
+    this.say(")");
+    this.printSpaces();
     this.sayln("{");
     this.autoIndent();
     s.thenn.accept(this);   // Exp
-    this.sayln("");
     this.unIndent();        // -
     this.autoIndent();
     this.say("}");
-    this.sayln("else");
+    this.say("else");
+    this.printSpaces();
+    this.sayln("{");
     this.indent();          // +
-    this.say("{");
     this.autoIndent();
     s.elsee.accept(this);   // Exp
-    this.sayln("");
     this.unIndent();        // -
     this.autoIndent();
-    this.say("}");
+    this.sayln("}");
     return;
   }
 
@@ -288,6 +287,7 @@ public class PrettyPrintVisitor implements Visitor
     sayln("");
     this.autoIndent();
     s.body.accept(this);      // Stm
+    this.unIndent();
     this.autoIndent();
     sayln("}");
 
@@ -370,7 +370,6 @@ public class PrettyPrintVisitor implements Visitor
       this.autoIndent();
       s.accept(this); // Stm
     }
-    this.unIndent();
     this.autoIndent();
     this.say("return ");
 
@@ -379,7 +378,6 @@ public class PrettyPrintVisitor implements Visitor
     this.unIndent();
     this.autoIndent();
     this.sayln("}");
-
     return;
   }
 
