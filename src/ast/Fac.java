@@ -110,8 +110,8 @@ public class Fac
                                                 new Lt(new ast.Ast.Exp.Id("i"), new ast.Ast.Exp.Id("n")),
                                                 new Stm.Block(
                                                         new util.Flist<Stm.T>().list(
-                                                                new Assign("sum", new Exp.And(new Exp.Id("sum"), new Exp.Id("i"))),
-                                                                new Assign("i", new Exp.And(new Id("i"), new Num(1)))
+                                                                new Assign("sum", new Exp.Add(new Exp.Id("sum"), new Exp.Id("i"))),
+                                                                new Assign("i", new Exp.Add(new Id("i"), new Num(1)))
                                                         )
                                                 )
                                    )

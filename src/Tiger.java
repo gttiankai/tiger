@@ -4,7 +4,6 @@ import control.Control;
 import lexer.Lexer;
 import lexer.Token;
 import parser.Parser;
-
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -27,7 +26,7 @@ public class Tiger {
 		if (testFac) {
 			System.out.println("Testing the Tiger compiler on Fac.java starting:");
 			ast.PrettyPrintVisitor pp = new ast.PrettyPrintVisitor();
-			ast.Fac.prog.accept(pp);
+			ast.Fac.progSum.accept(pp);
 			System.out.println("Testing the Tiger compiler on Fac.java finished.");
 			System.exit(1);
 		}
