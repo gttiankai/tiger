@@ -2,7 +2,6 @@ package lexer;
 
 import lexer.Token.Kind;
 import util.Bug;
-
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -212,6 +211,7 @@ public class Lexer {
                 	// loop to eat the commentes 
                     c1 = this.fstream.read();
                 }
+                this.lineNum++;
                 return nextTokenInternal();
 
             }else if(this.fstream.read() == '*'){
@@ -231,7 +231,7 @@ public class Lexer {
                 	System.out.print("the commments must be end with '*/' ");
                 	new Bug();
                 }else{
-                	// iglegal end the commments
+                	//  end the commments
                 	System.out.println("[++ERROE++]the comments error at " + this.lineNum);
                 	new Bug();
                 }
@@ -302,7 +302,10 @@ public class Lexer {
     	for (; ; ) {
     		this.fstream.mark(1);
     		int s = this.fstream.read();
-    		if (  ( s == '_') || ( (s >= 'a')&&( s <= 'z') ) || ( (s >= 'A' )&&( s <= 'Z') ) ) {			
+    		if (  ( s == '_')
+                    || ( (s >= 'a')&&( s <= 'z') )
+                    || ( (s >= 'A' )&&( s <= 'Z') )
+                    || ( (s >= '0')&&(s <= '9') )  ) {
     			sb.append((char)s);
     		}else{
     			this.fstream.reset();

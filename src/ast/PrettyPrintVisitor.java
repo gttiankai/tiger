@@ -100,14 +100,16 @@ public class PrettyPrintVisitor implements Visitor
   {
     e.exp.accept(this);
     this.say("." + e.id + "(");
-    for (Exp.T x : e.args) {  
-      x.accept(this); 
-      this.say(", ");
+    // 使用 for (Exp.T x : e.args) 当为空的时候 会出啊先问题
+    if (e.args != null) {
+      for (Exp.T x : e.args) {
+        x.accept(this);
+        this.say(", ");
+      }
+      if (!e.args.isEmpty())
+        this.say("\b\b");
     }
-	if (!e.args.isEmpty())
-		this.say("\b\b");
     this.say(")");
-    return;
   }
 
   @Override
@@ -136,7 +138,6 @@ public class PrettyPrintVisitor implements Visitor
     e.left.accept(this);
     this.say(" < ");
     e.right.accept(this);
-    return;
   }
 
   @Override
@@ -153,7 +154,6 @@ public class PrettyPrintVisitor implements Visitor
   public void visit(NewObject e)
   {
     this.say("new " + e.id + "()");
-    return;
   }
 
   @Override
@@ -167,7 +167,6 @@ public class PrettyPrintVisitor implements Visitor
   public void visit(Num e)
   {
     System.out.print(e.num);
-    return;
   }
 
   @Override
@@ -176,7 +175,6 @@ public class PrettyPrintVisitor implements Visitor
     e.left.accept(this);
     this.say(" - ");
     e.right.accept(this);
-    return;
   }
 
   @Override
@@ -191,7 +189,6 @@ public class PrettyPrintVisitor implements Visitor
     e.left.accept(this);
     this.say(" * ");
     e.right.accept(this);
-    return;
   }
 
   @Override
@@ -207,7 +204,6 @@ public class PrettyPrintVisitor implements Visitor
     this.say(s.id + " = ");
     s.exp.accept(this);
     this.sayln(";");
-    return;
   }
 
   @Override
@@ -264,7 +260,6 @@ public class PrettyPrintVisitor implements Visitor
     this.unIndent();        // -
     this.autoIndent();
     this.sayln("}");
-    return;
   }
 
   @Override
@@ -272,9 +267,9 @@ public class PrettyPrintVisitor implements Visitor
   {
     this.autoIndent();
     this.say("System.out.println (");
+    // the exp may be null
     s.exp.accept(this);      // Exp
     this.sayln(");");
-    return;
   }
 
   @Override
@@ -321,7 +316,7 @@ public class PrettyPrintVisitor implements Visitor
   @Override
   public void visit(IntArray t)
   {
-    say(t.toString());
+    say("int[]");
   }
 
   // dec
@@ -378,7 +373,6 @@ public class PrettyPrintVisitor implements Visitor
     this.unIndent();
     this.autoIndent();
     this.sayln("}");
-    return;
   }
 
   // class
@@ -399,17 +393,18 @@ public class PrettyPrintVisitor implements Visitor
     this.indent();
 
     for (Dec.T d : c.decs) {
+      this.autoIndent();
       Dec.DecSingle dec = (Dec.DecSingle) d;
       dec.type.accept(this);            // Type
+      printSpaces();
       this.sayln(dec.id + ";");
     }
     this.autoIndent();
+
     for (Method.T mthd : c.methods)
       mthd.accept(this);
     this.unIndent();
-
     this.sayln("}");
-    return;
   }
 
   // main class
@@ -429,19 +424,17 @@ public class PrettyPrintVisitor implements Visitor
     c.stm.accept(this);// accept(statement)
     autoIndent();
     this.sayln("}");
-
     this.unIndent();
     this.autoIndent();
     this.sayln("}");
-    return;
   }
 
   // program
   @Override
   public void visit(Program.ProgramSingle p)
   {
-    p.mainClass.accept(this);
-    this.sayln("");// oup put "\n" to the outstream
+    p.mainClass.accept(this);// mainClass
+    this.sayln("");
     for (ast.Ast.Class.T classs : p.classes) {
       classs.accept(this);
     }
