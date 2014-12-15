@@ -1,6 +1,7 @@
 *.class
 bin/*
 /bin
+/out
 *.o
 *.dot
 *.bmp

@@ -229,6 +229,7 @@ public class Ast
       public String id;
       public java.util.LinkedList<T> args;
       public String type; // type of first field "exp"
+
       public java.util.LinkedList<Type.T> at; // arg's type
       public Type.T rt;
 
@@ -528,6 +529,9 @@ public class Ast
     public static class Block extends T
     {
       public java.util.LinkedList<T> stms;
+
+      // add by tiankai
+      public Block(){};
 
       public Block(java.util.LinkedList<T> stms)
       {

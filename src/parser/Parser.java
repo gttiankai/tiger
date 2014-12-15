@@ -81,12 +81,13 @@ public class Parser {
     //         ->
     // ExpRest -> , Exp
     private LinkedList<Ast.Exp.T> parseExpList() {
-        if (current.kind == Kind.TOKEN_RPAREN)
-            return null;
         LinkedList<Ast.Exp.T> expList = new LinkedList<>();
+        if (current.kind == Kind.TOKEN_RPAREN)
+            return expList;
+
         expList.add(parseExp());
         while (current.kind == Kind.TOKEN_COMMER) {
-            advance();
+            eatToken(Kind.TOKEN_COMMER);
             expList.add(parseExp());
         }
         return expList;
@@ -129,40 +130,26 @@ public class Parser {
                 advance();
                 return new Ast.Exp.This();
             case TOKEN_ID: {                      // id
-                // todo
                 String id = current.lexeme;
                 eatToken(Kind.TOKEN_ID);
                 return new Ast.Exp.Id(id);
-//                advance();
-//
-//                Token savedToken = current;
-//                if (current.kind == Kind.TOKEN_SEMI) {
-//
-//                    return new Ast.Exp.Id(id);
-//                }else if( (current.kind == Kind.TOKEN_ADD){
-//                    advance();
-//                    return new Ast.Exp.Add( parseExp() , );
-//                    saveToken(current);
-//                    current = savedToken;
-//
-//                }
             }
             case TOKEN_NEW: {                   // new
                 advance();
                 switch (current.kind) {
-                    case TOKEN_INT: {
+                    case TOKEN_INT: {           // int
                         advance();
                         eatToken(Kind.TOKEN_LBRACK);
                         Ast.Exp.T exp = parseExp();
                         eatToken(Kind.TOKEN_RBRACK);
-                        return exp;
+                        return new Ast.Exp.NewIntArray(exp);
                     }
                     case TOKEN_ID:
                         String idType = current.lexeme;
                         advance();
                         eatToken(Kind.TOKEN_LPAREN);
                         eatToken(Kind.TOKEN_RPAREN);
-                        return new Ast.Exp.Id(idType);
+                        return new Ast.Exp.NewObject(idType);
                     default:
                         error();
                         return null;
@@ -175,7 +162,7 @@ public class Parser {
     }
 
     // NotExp -> AtomExp
-    //        -> AtomExp .id (expList) // *construct*
+    //        -> AtomExp .id (expList) // *construct* call
     //        -> AtomExp [exp]
     //        -> AtomExp .length
     private Ast.Exp.T parseNotExp() {
@@ -193,10 +180,9 @@ public class Parser {
                     String id = current.lexeme;
                     eatToken(Kind.TOKEN_ID);
                     eatToken(Kind.TOKEN_LPAREN);
-                    LinkedList<Ast.Exp.T> args = parseExpList();
-
+                    LinkedList<Ast.Exp.T> expList = parseExpList();
                     eatToken(Kind.TOKEN_RPAREN);
-                    atomExp = new Ast.Exp.Call(atomExp, id, args);
+                    atomExp = new Ast.Exp.Call(atomExp, id, expList);
                 }
             } else {
                 advance();
@@ -293,14 +279,39 @@ public class Parser {
                 return new Ast.Stm.Block(statements);
             }
             case TOKEN_IF: {
-                eatToken(Kind.TOKEN_IF);            // if
-                eatToken(Kind.TOKEN_LPAREN);        // (
-                Ast.Exp.T condition = parseExp();   // Exp
-                eatToken(Kind.TOKEN_RPAREN);        // )
-                Ast.Stm.Block ifBody = new Ast.Stm.Block(parseStatements());
-                eatToken(Kind.TOKEN_ELSE);          // else
-                Ast.Stm.Block elseBody = new Ast.Stm.Block( parseStatements());// Statements
-                return new Ast.Stm.If(condition, ifBody, elseBody);
+                eatToken(Kind.TOKEN_IF);                        // if
+                eatToken(Kind.TOKEN_LPAREN);                    // (
+                Ast.Exp.T condition = parseExp();               // Exp
+                eatToken(Kind.TOKEN_RPAREN);                    // )
+
+                if (current.kind == Kind.TOKEN_LBRACE){         // { if Statements* }
+                    eatToken(Kind.TOKEN_LBRACE);
+                    Ast.Stm.Block ifBody = new Ast.Stm.Block(parseStatements());
+                    eatToken(Kind.TOKEN_RBRACE);
+
+                    eatToken(Kind.TOKEN_ELSE);
+                    if(current.kind == Kind.TOKEN_LBRACE){      // { else Statements* }
+                        eatToken(Kind.TOKEN_LBRACE);
+                        Ast.Stm.Block elseBody = new Ast.Stm.Block(parseStatements());
+                        eatToken(Kind.TOKEN_RBRACE);
+                        return new Ast.Stm.If(condition,ifBody, elseBody);
+                    }else{                                      // { if Statements }
+                        Ast.Stm.T elseBody = parseStatement();
+                        return new Ast.Stm.If(condition,ifBody, elseBody);
+                    }
+                }else{
+                    Ast.Stm.T ifBody = parseStatement();
+                    eatToken(Kind.TOKEN_ELSE);
+                    if(current.kind == Kind.TOKEN_LBRACE){
+                        eatToken(Kind.TOKEN_LBRACE);
+                        Ast.Stm.Block elseBody = new Ast.Stm.Block(parseStatements());
+                        eatToken(Kind.TOKEN_RBRACE);
+                        return new Ast.Stm.If(condition,ifBody, elseBody);
+                    }else{
+                        Ast.Stm.T elseBody = parseStatement();
+                        return new Ast.Stm.If(condition,ifBody, elseBody);
+                    }
+                }
             }
             case TOKEN_WHILE: {
                 eatToken(Kind.TOKEN_WHILE);        // while

@@ -2,6 +2,7 @@ package elaborator;
 
 import java.util.LinkedList;
 
+import ast.Ast;
 import ast.Ast.Class;
 import ast.Ast.Exp.False;
 import ast.Ast.Exp.Id;
@@ -59,21 +60,66 @@ public class ElaboratorVisitor implements ast.Visitor
     System.exit(1);
   }
 
+  private void error(String errorMessage){
+    System.out.print("type mismatch : ");
+    System.out.println(errorMessage);
+    System.exit(1);
+  }
+
   // /////////////////////////////////////////////////////
   // expressions
   @Override
   public void visit(Add e)
   {
+    Type.T leftType ;
+    e.left.accept(this);
+    leftType = this.type;
+    if ( !(leftType instanceof Type.Int) ){
+      error("Add Operate: the left hand is not int!");
+    }
+    e.right.accept(this);
+    if ( ! (this.type.toString().equals( leftType.toString()))){
+      error("Add Operate: the right hand is not int!");
+    }
+    this.type = new Type.Int();
+    return;
+
   }
 
   @Override
   public void visit(And e)
   {
+
+    e.left.accept(this);
+    Type.T leftType = this.type;
+    e.right.accept(this);
+    if (  leftType instanceof Type.Boolean){
+      if (this.type.toString().equals( leftType.toString())){
+        this.type = new Type.Boolean();
+      }else {
+        error("And Operate: the right hand is not boolean!");
+      }
+    }else {
+      error("And Operate: the left hand is not boolean!");
+    }
+
   }
 
   @Override
   public void visit(ArraySelect e)
   {
+    e.index.accept(this);
+    Type.T indexType = this.type;
+    e.array.accept(this);
+    if ( !(indexType instanceof Type.Int) ){
+      error("ArraySelect Operate: the index is not int");
+    }
+    if ( !(this.type instanceof Type.IntArray)){
+      error("ArraySelect Operate: the array is not int[]");
+    }
+    this.type = new Type.Int();
+    return;
+
   }
 
   @Override
@@ -87,32 +133,59 @@ public class ElaboratorVisitor implements ast.Visitor
     if (leftty instanceof ClassType) {
       ty = (ClassType) leftty;
       e.type = ty.id;
-    } else
-      error();
-    MethodType mty = this.classTable.getm(ty.id, e.id);
+    } else {
+      error("Call Operate: " + e.id + " is not class!");
+    }
+    // check the args
+    MethodType mty = this.classTable.getMethodType(ty.id, e.id);
     java.util.LinkedList<Type.T> argsty = new LinkedList<Type.T>();
+
     for (Exp.T a : e.args) {
       a.accept(this);
       argsty.addLast(this.type);
     }
+
     if (mty.argsType.size() != argsty.size())
-      error();
+      error(" Call Operate: the args number is mismatch!");
+
     for (int i = 0; i < argsty.size(); i++) {
       Dec.DecSingle dec = (Dec.DecSingle) mty.argsType.get(i);
       if (dec.type.toString().equals(argsty.get(i).toString()))
         ;
-      else
-        error();
+      else {
+        String ancestor = argsty.get(i).toString();
+        for (;;) {
+          // find if dec.type.toString() is ancestor of argsty.get(i).toString()
+          ClassBinding cb = this.classTable.get(ancestor);
+          if (cb.extendss == null){
+            error( "Call: dec type is " + dec.type.toString() +
+                    ", real is " + argsty.get(i).toString());
+          }else {
+            if (cb.extendss.equals(dec.type.toString()))
+              ;//detected extends
+            else {
+              ancestor = cb.extendss;
+              continue;//
+            }
+          }
+          break;
+        }
+      }
     }
+
     this.type = mty.retType;
     e.at = argsty;
     e.rt = this.type;
+
     return;
   }
 
   @Override
   public void visit(False e)
   {
+    this.type = new Type.Boolean();
+    return;
+
   }
 
   @Override
@@ -128,7 +201,7 @@ public class ElaboratorVisitor implements ast.Visitor
       e.isField = true;
     }
     if (type == null)
-      error();
+      error(e.id + " is not defined!");
     this.type = type;
     // record this type on this node for future use.
     e.type = type;
@@ -138,16 +211,23 @@ public class ElaboratorVisitor implements ast.Visitor
   @Override
   public void visit(Length e)
   {
+    e.array.accept(this);
+    Type.T arrayType= this.type;
+    if ( !(arrayType instanceof Type.IntArray)){
+      error("Length Operate: the Array type is not int[]");
+    }
+    this.type = new Type.Int();
   }
 
   @Override
   public void visit(Lt e)
   {
+    // todo reference
     e.left.accept(this);
     Type.T ty = this.type;
     e.right.accept(this);
     if (!this.type.toString().equals(ty.toString()))
-      error();
+      error("Lt Operate: the left hand is not match right hand!");
     this.type = new Type.Boolean();
     return;
   }
@@ -155,6 +235,9 @@ public class ElaboratorVisitor implements ast.Visitor
   @Override
   public void visit(NewIntArray e)
   {
+    this.type = new Type.IntArray();
+    return;
+
   }
 
   @Override
@@ -167,6 +250,12 @@ public class ElaboratorVisitor implements ast.Visitor
   @Override
   public void visit(Not e)
   {
+    e.exp.accept(this);
+    Type.T expType = this.type;
+    if ( !(expType instanceof Type.Boolean)){
+      error("Not Operate: The exp is not boolean");
+    }
+    this.type = new Type.Boolean();
   }
 
   @Override
@@ -180,9 +269,9 @@ public class ElaboratorVisitor implements ast.Visitor
   public void visit(Sub e)
   {
     e.left.accept(this);
-    Type.T leftty = this.type;
+    Type.T leftType = this.type;
     e.right.accept(this);
-    if (!this.type.toString().equals(leftty.toString()))
+    if (!this.type.toString().equals(leftType.toString()))
       error();
     this.type = new Type.Int();
     return;
@@ -210,6 +299,7 @@ public class ElaboratorVisitor implements ast.Visitor
   @Override
   public void visit(True e)
   {
+    this.type = new Type.Boolean();
   }
 
   // statements
@@ -217,26 +307,68 @@ public class ElaboratorVisitor implements ast.Visitor
   public void visit(Assign s)
   {
     // first look up the id in method table
-    Type.T type = this.methodTable.get(s.id);
+    Type.T idType = this.methodTable.get(s.id);
     // if search failed, then s.id must
-    if (type == null)
-      type = this.classTable.get(this.currentClass, s.id);
-    if (type == null)
-      error();
+    if (idType == null)
+      idType = this.classTable.get(this.currentClass, s.id);
+    if (idType == null)
+      error(s.id + "is not define!");
+
+    s.type = idType;// the type of id
+
+    // get the type of exp
     s.exp.accept(this);
-    s.type = type;
-    this.type.toString().equals(type.toString());
+    Type.T expType = this.type;
+    // compare
+    if( !(expType.toString().equals(s.type.toString()) )){
+      error("Assign Operate: can not make " +expType.toString() +" to " + s.type.toString());
+    }
     return;
   }
 
   @Override
+  /**
+   * array assign
+   * example : int[] a = int [2];
+   *           int[] b = int [2];
+   *           b[1] = 1;
+   *           b[2] = 2;
+   *           a = b;
+   */
   public void visit(AssignArray s)
   {
+    Type.T idType = this.methodTable.get(s.id);
+    if (idType == null){
+      idType = this.classTable.get(this.currentClass, s.id);
+    }
+    if (idType == null){
+      error(s.id + "is not define!");
+    }
+    if ( !(idType instanceof Type.IntArray) ){
+      error("AssignArray Operate: the id is not int");
+    }
+
+    s.index.accept(this);
+    Type.T indexType = this.type;
+
+    if ( !(indexType instanceof Type.Int) ){
+      error("AssignArray Operate: the index is not int");
+    }
+    s.exp.accept(this);
+    Type.T expType = this.type;
+
+    if( !( expType instanceof Type.Int) ){
+      error("AssignArray Operate: can not make "+ this.type.toString() +" to "+ type.toString());
+    }
+    return;
   }
 
   @Override
   public void visit(Block s)
   {
+    for(Ast.Stm.T stm : s.stms){
+      stm.accept(this);
+    }
   }
 
   @Override
@@ -244,7 +376,7 @@ public class ElaboratorVisitor implements ast.Visitor
   {
     s.condition.accept(this);
     if (!this.type.toString().equals("@boolean"))
-      error();
+      error("If: the condition is npt boolean");
     s.thenn.accept(this);
     s.elsee.accept(this);
     return;
@@ -253,21 +385,29 @@ public class ElaboratorVisitor implements ast.Visitor
   @Override
   public void visit(Print s)
   {
+
     s.exp.accept(this);
     if (!this.type.toString().equals("@int"))
-      error();
+      error("Print Operate: the exp is not int!");
     return;
   }
 
   @Override
   public void visit(While s)
   {
+    s.condition.accept(this);
+    if (!this.type.toString().equals("@boolean")){
+      error("While: the condition is not boolean");
+    }
+    s.body.accept(this);
+    return;
   }
 
   // type
   @Override
   public void visit(Type.Boolean t)
   {
+
   }
 
   @Override
@@ -278,7 +418,6 @@ public class ElaboratorVisitor implements ast.Visitor
   @Override
   public void visit(Type.Int t)
   {
-    System.out.println("aaaa");
   }
 
   @Override
@@ -296,11 +435,13 @@ public class ElaboratorVisitor implements ast.Visitor
   @Override
   public void visit(Method.MethodSingle m)
   {
-    // construct the method table
+    // construct the new method table every new method
+    this.methodTable = new MethodTable();
+
     this.methodTable.put(m.formals, m.locals);
 
     if (ConAst.elabMethodTable)
-      this.methodTable.dump();
+      this.methodTable.dump(m.id);
 
     for (Stm.T s : m.stms)
       s.accept(this);
@@ -366,6 +507,7 @@ public class ElaboratorVisitor implements ast.Visitor
     // a class table is a mapping from class names to class bindings
     // classTable: className -> ClassBinding{extends, fields, methods}
     buildMainClass((MainClass.MainClassSingle) p.mainClass);
+
     for (Class.T c : p.classes) {
       buildClass((ClassSingle) c);
     }
@@ -376,9 +518,10 @@ public class ElaboratorVisitor implements ast.Visitor
     }
 
     // ////////////////////////////////////////////////
-    // step 2: elaborate each class in turn, under the class table
+    // step 2: elaborate(semantic analysis) each class in turn, under the class table
     // built above.
     p.mainClass.accept(this);
+
     for (Class.T c : p.classes) {
       c.accept(this);
     }
