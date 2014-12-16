@@ -16,6 +16,8 @@ public class Ast
       // class: 2
       // Such that one can easily tell who is who
       public abstract int getNum();
+
+      int lineNumber;
     }
 
     // boolean
@@ -133,6 +135,7 @@ public class Ast
   {
     public static abstract class T implements ast.Acceptable
     {
+      public int lineNumber;
     }
 
     public static class DecSingle extends T
@@ -140,10 +143,17 @@ public class Ast
       public Type.T type;
       public String id;
 
+      public DecSingle(Type.T type, String id, int lineNumber)
+      {
+        this.type = type;
+        this.id = id;
+        this.lineNumber = lineNumber;
+      }
       public DecSingle(Type.T type, String id)
       {
         this.type = type;
         this.id = id;
+        this.lineNumber = 0;
       }
 
       @Override
@@ -160,6 +170,7 @@ public class Ast
   {
     public static abstract class T implements ast.Acceptable
     {
+      public int lineNumber;
     }
 
     // +
@@ -168,10 +179,18 @@ public class Ast
       public T left;
       public T right;
 
+      public Add(T left, T right, int lineNumber)
+      {
+        this.left = left;
+        this.right = right;
+        this.lineNumber = lineNumber;
+      }
+
       public Add(T left, T right)
       {
         this.left = left;
         this.right = right;
+        this.lineNumber = 0;
       }
 
       @Override
@@ -188,11 +207,20 @@ public class Ast
       public T left;
       public T right;
 
+      public And(T left, T right, int lineNumber)
+      {
+        this.left = left;
+        this.right = right;
+        this.lineNumber = lineNumber;
+      }
+
       public And(T left, T right)
       {
         this.left = left;
         this.right = right;
+        this.lineNumber = 0;
       }
+
 
       @Override
       public void accept(ast.Visitor v)
@@ -208,11 +236,20 @@ public class Ast
       public T array;
       public T index;
 
+      public ArraySelect(T array, T index, int lineNumber)
+      {
+        this.array = array;
+        this.index = index;
+        this.lineNumber = lineNumber;
+      }
+
       public ArraySelect(T array, T index)
       {
         this.array = array;
         this.index = index;
+        this.lineNumber = 0;
       }
+
 
       @Override
       public void accept(ast.Visitor v)
@@ -233,12 +270,22 @@ public class Ast
       public java.util.LinkedList<Type.T> at; // arg's type
       public Type.T rt;
 
+      public Call(T exp, String id, java.util.LinkedList<T> args, int lineNumber)
+      {
+        this.exp = exp;
+        this.id = id;
+        this.args = args;
+        this.type = null;
+        this.lineNumber = lineNumber;
+      }
+
       public Call(T exp, String id, java.util.LinkedList<T> args)
       {
         this.exp = exp;
         this.id = id;
         this.args = args;
         this.type = null;
+        this.lineNumber = 0;
       }
 
       @Override
@@ -252,6 +299,11 @@ public class Ast
     // False
     public static class False extends T
     {
+      public False(int lineNumber)
+      {
+        this.lineNumber = lineNumber;
+      }
+
       public False()
       {
       }
@@ -276,6 +328,22 @@ public class Ast
         this.id = id;
         this.type = null;
         this.isField = false;
+        this.lineNumber = 0;
+      }
+      public Id(String id, int lineNumber)
+      {
+        this.id = id;
+        this.type = null;
+        this.isField = false;
+        this.lineNumber = lineNumber;
+      }
+
+      public Id(String id, Type.T type, boolean isField, int lineNumber)
+      {
+        this.id = id;
+        this.type = type;
+        this.isField = isField;
+        this.lineNumber = lineNumber;
       }
 
       public Id(String id, Type.T type, boolean isField)
@@ -283,6 +351,7 @@ public class Ast
         this.id = id;
         this.type = type;
         this.isField = isField;
+        this.lineNumber = 0;
       }
 
       @Override
@@ -298,11 +367,17 @@ public class Ast
     {
       public T array;
 
+      public Length(T array, int lineNumber)
+      {
+        this.array = array;
+        this.lineNumber = lineNumber;
+      }
+
       public Length(T array)
       {
         this.array = array;
+        this.lineNumber = 0;
       }
-
       @Override
       public void accept(ast.Visitor v)
       {
@@ -317,10 +392,18 @@ public class Ast
       public T left;
       public T right;
 
+      public Lt(T left, T right, int lineNumber)
+      {
+        this.left = left;
+        this.right = right;
+        this.lineNumber = lineNumber;
+      }
+
       public Lt(T left, T right)
       {
         this.left = left;
         this.right = right;
+        this.lineNumber = 0;
       }
 
       @Override
@@ -336,9 +419,15 @@ public class Ast
     {
       public T exp;
 
+      public NewIntArray(T exp, int lineNumber)
+      {
+        this.exp = exp;
+        this.lineNumber = lineNumber;
+      }
       public NewIntArray(T exp)
       {
         this.exp = exp;
+        this.lineNumber = 0;
       }
 
       @Override
@@ -354,10 +443,19 @@ public class Ast
     {
       public String id;
 
+      public NewObject(String id, int lineNumber)
+      {
+        this.id = id;
+        this.lineNumber = lineNumber;
+      }
+
+
       public NewObject(String id)
       {
         this.id = id;
+        this.lineNumber = 0;
       }
+
 
       @Override
       public void accept(ast.Visitor v)
@@ -372,10 +470,17 @@ public class Ast
     {
       public T exp;
 
+      public Not(T exp, int lineNumber)
+      {
+        this.exp = exp;
+        this.lineNumber = lineNumber;
+      }
       public Not(T exp)
       {
         this.exp = exp;
+        this.lineNumber = 0;
       }
+
 
       @Override
       public void accept(ast.Visitor v)
@@ -390,11 +495,17 @@ public class Ast
     {
       public int num;
 
+      public Num(int num, int lineNumber)
+      {
+        this.num = num;
+        this.lineNumber = lineNumber;
+      }
+
       public Num(int num)
       {
         this.num = num;
+        this.lineNumber = 0;
       }
-
       @Override
       public void accept(ast.Visitor v)
       {
@@ -409,10 +520,17 @@ public class Ast
       public T left;
       public T right;
 
+      public Sub(T left, T right, int lineNumber)
+      {
+        this.left = left;
+        this.right = right;
+        this.lineNumber = lineNumber;
+      }
       public Sub(T left, T right)
       {
         this.left = left;
         this.right = right;
+        this.lineNumber = 0;
       }
 
       @Override
@@ -426,6 +544,10 @@ public class Ast
     // this
     public static class This extends T
     {
+      public This(int lineNumber)
+      {
+        this.lineNumber = lineNumber;
+      }
       public This()
       {
       }
@@ -444,10 +566,18 @@ public class Ast
       public T left;
       public T right;
 
+      public Times(T left, T right, int lineNumber)
+      {
+        this.left = left;
+        this.right = right;
+        this.lineNumber = lineNumber;
+      }
+
       public Times(T left, T right)
       {
         this.left = left;
         this.right = right;
+        this.lineNumber = 0;
       }
 
       @Override
@@ -461,8 +591,13 @@ public class Ast
     // True
     public static class True extends T
     {
+      public True(int lineNumber)
+      {
+        this.lineNumber = lineNumber;
+      }
       public True()
       {
+
       }
 
       @Override
@@ -481,6 +616,7 @@ public class Ast
   {
     public static abstract class T implements ast.Acceptable
     {
+      public int lineNumber ;
     }
 
     // assign
@@ -490,11 +626,19 @@ public class Ast
       public Exp.T exp;
       public Type.T type; // type of the id
 
+      public Assign(String id, Exp.T exp, int lineNumber)
+      {
+        this.id = id;
+        this.exp = exp;
+        this.type = null;
+        this.lineNumber = lineNumber;
+      }
       public Assign(String id, Exp.T exp)
       {
         this.id = id;
         this.exp = exp;
         this.type = null;
+        this.lineNumber = 0;
       }
 
       @Override
@@ -511,11 +655,19 @@ public class Ast
       public Exp.T index;
       public Exp.T exp;
 
+      public AssignArray(String id, Exp.T index, Exp.T exp, int lineNumber)
+      {
+        this.id = id;
+        this.index = index;
+        this.exp = exp;
+        this.lineNumber = lineNumber;
+      }
       public AssignArray(String id, Exp.T index, Exp.T exp)
       {
         this.id = id;
         this.index = index;
         this.exp = exp;
+        this.lineNumber = 0;
       }
 
       @Override
@@ -532,6 +684,7 @@ public class Ast
 
       // add by tiankai
       public Block(){};
+
 
       public Block(java.util.LinkedList<T> stms)
       {
@@ -557,6 +710,7 @@ public class Ast
         this.condition = condition;
         this.thenn = thenn;
         this.elsee = elsee;
+        this.lineNumber = 0; // if does't need the lineNumber
       }
 
       @Override
@@ -571,9 +725,16 @@ public class Ast
     {
       public Exp.T exp;
 
+      public Print(Exp.T exp,int lineNumber)
+      {
+        this.exp = exp;
+        this.lineNumber = lineNumber;
+      }
+
       public Print(Exp.T exp)
       {
         this.exp = exp;
+        this.lineNumber = lineNumber;
       }
 
       @Override
@@ -593,6 +754,7 @@ public class Ast
       {
         this.condition = condition;
         this.body = body;
+        this.lineNumber = 0; // while does't need the linenumber
       }
 
       @Override

@@ -46,6 +46,8 @@ public class ElaboratorVisitor implements ast.Visitor
   public String currentClass; // the class name being elaborated
   public Type.T type; // type of the expression being elaborated
 
+  private LinkedList<String> errorLinkedlist = new LinkedList<>();
+
   public ElaboratorVisitor()
   {
     this.classTable = new ClassTable();
@@ -60,10 +62,19 @@ public class ElaboratorVisitor implements ast.Visitor
     System.exit(1);
   }
 
-  private void error(String errorMessage){
-    System.out.print("type mismatch : ");
-    System.out.println(errorMessage);
-    System.exit(1);
+
+  private void error(String errorMessage, int lineNumber){
+
+    errorLinkedlist.add("[++ERROR++] at "
+            + lineNumber
+            + " line type mismatch\n  "
+            + errorMessage);
+  }
+  private void printError(){
+
+    for (String s : errorLinkedlist){
+      System.out.println(s);
+    }
   }
 
   // /////////////////////////////////////////////////////
@@ -75,11 +86,11 @@ public class ElaboratorVisitor implements ast.Visitor
     e.left.accept(this);
     leftType = this.type;
     if ( !(leftType instanceof Type.Int) ){
-      error("Add Operate: the left hand is not int!");
+      error("Add Operate: the left hand is not int!", e.lineNumber);
     }
     e.right.accept(this);
     if ( ! (this.type.toString().equals( leftType.toString()))){
-      error("Add Operate: the right hand is not int!");
+      error("Add Operate: the right hand is not int!", e.lineNumber);
     }
     this.type = new Type.Int();
     return;
@@ -97,10 +108,10 @@ public class ElaboratorVisitor implements ast.Visitor
       if (this.type.toString().equals( leftType.toString())){
         this.type = new Type.Boolean();
       }else {
-        error("And Operate: the right hand is not boolean!");
+        error("And Operate: the right hand is not boolean!", e.lineNumber);
       }
     }else {
-      error("And Operate: the left hand is not boolean!");
+      error("And Operate: the left hand is not boolean!", e.lineNumber);
     }
 
   }
@@ -112,10 +123,10 @@ public class ElaboratorVisitor implements ast.Visitor
     Type.T indexType = this.type;
     e.array.accept(this);
     if ( !(indexType instanceof Type.Int) ){
-      error("ArraySelect Operate: the index is not int");
+      error("ArraySelect Operate: the index is not int", e.lineNumber);
     }
     if ( !(this.type instanceof Type.IntArray)){
-      error("ArraySelect Operate: the array is not int[]");
+      error("ArraySelect Operate: the array is not int[]", e.lineNumber);
     }
     this.type = new Type.Int();
     return;
@@ -134,7 +145,7 @@ public class ElaboratorVisitor implements ast.Visitor
       ty = (ClassType) leftty;
       e.type = ty.id;
     } else {
-      error("Call Operate: " + e.id + " is not class!");
+      error("Call Operate: " + e.id + " is not class!", e.lineNumber);
     }
     // check the args
     MethodType mty = this.classTable.getMethodType(ty.id, e.id);
@@ -146,7 +157,7 @@ public class ElaboratorVisitor implements ast.Visitor
     }
 
     if (mty.argsType.size() != argsty.size())
-      error(" Call Operate: the args number is mismatch!");
+      error(" Call Operate: the args number is mismatch!", e.lineNumber);
 
     for (int i = 0; i < argsty.size(); i++) {
       Dec.DecSingle dec = (Dec.DecSingle) mty.argsType.get(i);
@@ -157,9 +168,9 @@ public class ElaboratorVisitor implements ast.Visitor
         for (;;) {
           // find if dec.type.toString() is ancestor of argsty.get(i).toString()
           ClassBinding cb = this.classTable.get(ancestor);
-          if (cb.extendss == null){
+          if (cb == null){
             error( "Call: dec type is " + dec.type.toString() +
-                    ", real is " + argsty.get(i).toString());
+                    ",but the parsed argument is " + argsty.get(i).toString(), e.lineNumber);
           }else {
             if (cb.extendss.equals(dec.type.toString()))
               ;//detected extends
@@ -201,7 +212,7 @@ public class ElaboratorVisitor implements ast.Visitor
       e.isField = true;
     }
     if (type == null)
-      error(e.id + " is not defined!");
+      error(e.id + " is not defined!", e.lineNumber);
     this.type = type;
     // record this type on this node for future use.
     e.type = type;
@@ -214,7 +225,7 @@ public class ElaboratorVisitor implements ast.Visitor
     e.array.accept(this);
     Type.T arrayType= this.type;
     if ( !(arrayType instanceof Type.IntArray)){
-      error("Length Operate: the Array type is not int[]");
+      error("Length Operate: the Array type is not int[]", e.lineNumber);
     }
     this.type = new Type.Int();
   }
@@ -227,7 +238,7 @@ public class ElaboratorVisitor implements ast.Visitor
     Type.T ty = this.type;
     e.right.accept(this);
     if (!this.type.toString().equals(ty.toString()))
-      error("Lt Operate: the left hand is not match right hand!");
+      error("Lt Operate: the left hand is not match right hand!", e.lineNumber);
     this.type = new Type.Boolean();
     return;
   }
@@ -253,7 +264,7 @@ public class ElaboratorVisitor implements ast.Visitor
     e.exp.accept(this);
     Type.T expType = this.type;
     if ( !(expType instanceof Type.Boolean)){
-      error("Not Operate: The exp is not boolean");
+      error("Not Operate: The exp is not boolean", e.lineNumber);
     }
     this.type = new Type.Boolean();
   }
@@ -272,7 +283,9 @@ public class ElaboratorVisitor implements ast.Visitor
     Type.T leftType = this.type;
     e.right.accept(this);
     if (!this.type.toString().equals(leftType.toString()))
-      error();
+      error("Sub Operate: the left type is " + leftType.toString()
+              + "the right type is " + this.type.toString() + "It is mismatch!",
+              e.lineNumber);
     this.type = new Type.Int();
     return;
   }
@@ -291,7 +304,9 @@ public class ElaboratorVisitor implements ast.Visitor
     Type.T leftty = this.type;
     e.right.accept(this);
     if (!this.type.toString().equals(leftty.toString()))
-      error();
+      error("Sub Operate: the left type is " + leftty.toString()
+                      + "the right type is " + this.type.toString() + "It is mismatch!",
+              e.lineNumber);
     this.type = new Type.Int();
     return;
   }
@@ -312,7 +327,7 @@ public class ElaboratorVisitor implements ast.Visitor
     if (idType == null)
       idType = this.classTable.get(this.currentClass, s.id);
     if (idType == null)
-      error(s.id + "is not define!");
+      error(s.id + "is not define!",s.lineNumber);
 
     s.type = idType;// the type of id
 
@@ -321,7 +336,8 @@ public class ElaboratorVisitor implements ast.Visitor
     Type.T expType = this.type;
     // compare
     if( !(expType.toString().equals(s.type.toString()) )){
-      error("Assign Operate: can not make " +expType.toString() +" to " + s.type.toString());
+      error("Assign Operate: can not make " +expType.toString() +" to " + s.type.toString(),
+              s.lineNumber);
     }
     return;
   }
@@ -342,23 +358,24 @@ public class ElaboratorVisitor implements ast.Visitor
       idType = this.classTable.get(this.currentClass, s.id);
     }
     if (idType == null){
-      error(s.id + "is not define!");
+      error(s.id + "is not define!", s.lineNumber);
     }
     if ( !(idType instanceof Type.IntArray) ){
-      error("AssignArray Operate: the id is not int");
+      error("AssignArray Operate: the id is not int", s.lineNumber);
     }
 
     s.index.accept(this);
     Type.T indexType = this.type;
 
     if ( !(indexType instanceof Type.Int) ){
-      error("AssignArray Operate: the index is not int");
+      error("AssignArray Operate: the index is not int", s.lineNumber);
     }
     s.exp.accept(this);
     Type.T expType = this.type;
 
     if( !( expType instanceof Type.Int) ){
-      error("AssignArray Operate: can not make "+ this.type.toString() +" to "+ type.toString());
+      error("AssignArray Operate: can not make "+ this.type.toString() +" to "+ type.toString(),
+              s.lineNumber);
     }
     return;
   }
@@ -376,7 +393,7 @@ public class ElaboratorVisitor implements ast.Visitor
   {
     s.condition.accept(this);
     if (!this.type.toString().equals("@boolean"))
-      error("If: the condition is npt boolean");
+      error("If: the condition is npt boolean", s.lineNumber);
     s.thenn.accept(this);
     s.elsee.accept(this);
     return;
@@ -388,7 +405,7 @@ public class ElaboratorVisitor implements ast.Visitor
 
     s.exp.accept(this);
     if (!this.type.toString().equals("@int"))
-      error("Print Operate: the exp is not int!");
+      error("Print Operate: the exp is not int!", s.lineNumber);
     return;
   }
 
@@ -397,7 +414,7 @@ public class ElaboratorVisitor implements ast.Visitor
   {
     s.condition.accept(this);
     if (!this.type.toString().equals("@boolean")){
-      error("While: the condition is not boolean");
+      error("While: the condition is not boolean", s.lineNumber);
     }
     s.body.accept(this);
     return;
@@ -525,6 +542,7 @@ public class ElaboratorVisitor implements ast.Visitor
     for (Class.T c : p.classes) {
       c.accept(this);
     }
+    printError();
 
   }
 }
