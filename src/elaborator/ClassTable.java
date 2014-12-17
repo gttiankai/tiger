@@ -11,9 +11,12 @@ public class ClassTable
   // map each class name (a string), to the class bindings.
   private java.util.Hashtable<String, ClassBinding> table;
 
+  public java.util.Hashtable<String, ClassBinding> getTable(){
+    return this.table;
+  }
+
   public ClassTable()
   {
-
     this.table = new java.util.Hashtable<String, ClassBinding>();
   }
 

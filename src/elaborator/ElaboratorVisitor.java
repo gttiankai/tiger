@@ -1,7 +1,9 @@
 package elaborator;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedList;
-
+import java.util.Map;
 import ast.Ast;
 import ast.Ast.Class;
 import ast.Ast.Exp.False;
@@ -38,6 +40,7 @@ import ast.Ast.Stm.While;
 import ast.Ast.Type;
 import ast.Ast.Type.ClassType;
 import control.Control.ConAst;
+import slp.Main;
 
 public class ElaboratorVisitor implements ast.Visitor
 {
@@ -45,13 +48,18 @@ public class ElaboratorVisitor implements ast.Visitor
   public MethodTable methodTable; // symbol table for each method
   public String currentClass; // the class name being elaborated
   public Type.T type; // type of the expression being elaborated
+  public Warning warning;
 
-  private LinkedList<String> errorLinkedlist = new LinkedList<>();
+  private LinkedList<String> errorLinkedlist = new LinkedList<String>();
+
+
 
   public ElaboratorVisitor()
   {
     this.classTable = new ClassTable();
     this.methodTable = new MethodTable();
+    // every class has one warning,in fact has one used id array
+    this.warning = new Warning();
     this.currentClass = null;
     this.type = null;
   }
@@ -76,6 +84,8 @@ public class ElaboratorVisitor implements ast.Visitor
       System.out.println(s);
     }
   }
+
+
 
   // /////////////////////////////////////////////////////
   // expressions
@@ -213,6 +223,10 @@ public class ElaboratorVisitor implements ast.Visitor
     }
     if (type == null)
       error(e.id + " is not defined!", e.lineNumber);
+
+    // add this id to warning's usedid list
+    this.warning.put(e.id);
+
     this.type = type;
     // record this type on this node for future use.
     e.type = type;
@@ -284,7 +298,7 @@ public class ElaboratorVisitor implements ast.Visitor
     e.right.accept(this);
     if (!this.type.toString().equals(leftType.toString()))
       error("Sub Operate: the left type is " + leftType.toString()
-              + "the right type is " + this.type.toString() + "It is mismatch!",
+              + " and the right type is " + this.type.toString() + "It is mismatch!",
               e.lineNumber);
     this.type = new Type.Int();
     return;
@@ -305,7 +319,7 @@ public class ElaboratorVisitor implements ast.Visitor
     e.right.accept(this);
     if (!this.type.toString().equals(leftty.toString()))
       error("Sub Operate: the left type is " + leftty.toString()
-                      + "the right type is " + this.type.toString() + "It is mismatch!",
+                      + "and the right type is " + this.type.toString() + "It is mismatch!",
               e.lineNumber);
     this.type = new Type.Int();
     return;
@@ -328,6 +342,7 @@ public class ElaboratorVisitor implements ast.Visitor
       idType = this.classTable.get(this.currentClass, s.id);
     if (idType == null)
       error(s.id + "is not define!",s.lineNumber);
+    this.warning.put(s.id);
 
     s.type = idType;// the type of id
 
@@ -452,8 +467,9 @@ public class ElaboratorVisitor implements ast.Visitor
   @Override
   public void visit(Method.MethodSingle m)
   {
-    // construct the new method table every new method
+    // construct the new method table and warning  every new method
     this.methodTable = new MethodTable();
+
 
     this.methodTable.put(m.formals, m.locals);
 
@@ -463,6 +479,8 @@ public class ElaboratorVisitor implements ast.Visitor
     for (Stm.T s : m.stms)
       s.accept(this);
     m.retExp.accept(this);
+    // print the waring
+    this.warning.printMethodWarning(m);
     return;
   }
 
@@ -543,6 +561,5 @@ public class ElaboratorVisitor implements ast.Visitor
       c.accept(this);
     }
     printError();
-
   }
 }

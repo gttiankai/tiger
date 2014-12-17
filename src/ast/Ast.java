@@ -336,6 +336,7 @@ public class Ast
         this.type = null;
         this.isField = false;
         this.lineNumber = lineNumber;
+
       }
 
       public Id(String id, Type.T type, boolean isField, int lineNumber)

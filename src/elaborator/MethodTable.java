@@ -4,6 +4,7 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
 
+import ast.Ast;
 import ast.Ast.Dec;
 import ast.Ast.Type;
 import util.Todo;
