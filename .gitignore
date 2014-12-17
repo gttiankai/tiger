@@ -13,3 +13,4 @@ test/*.c
 *.txt
 *~
 homework/
+*.iml
