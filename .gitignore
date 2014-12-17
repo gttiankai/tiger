@@ -1,0 +1,16 @@
+*.class
+bin/*
+/bin
+/out
+*.o
+*.dot
+*.bmp
+*.pdf
+*.ps
+*.jpg
+a.out*
+test/*.c
+*.txt
+*~
+homework/
+*.iml

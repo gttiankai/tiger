@@ -29,5 +29,4 @@ public class Tuple
 
     return this.id.equals(((Tuple) t).id);
   }
-
 }

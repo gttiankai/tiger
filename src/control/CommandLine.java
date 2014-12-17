@@ -1,17 +1,15 @@
 package control;
 
-import java.util.LinkedList;
-
-import util.Bug;
 import control.Control.ConSlp;
+import util.Bug;
 
+import java.util.LinkedList;
 public class CommandLine
 {
   static interface F<X>
   {
     public void f(X x);
   }
-
   static enum Kind
   {
     Empty, Bool, Int, String, StringList,
@@ -36,7 +34,7 @@ public class CommandLine
     }
   }
 
-  private LinkedList<Arg<Object>> args;
+  private LinkedList< Arg<Object> > args;
 
   @SuppressWarnings("unchecked")
   public CommandLine()
@@ -128,6 +126,8 @@ public class CommandLine
                 }), new Arg<Object>("testlexer", null,
                 "whether or not to test the lexer", Kind.Empty, (s) -> {
                   Control.ConLexer.test = true;
+                  // 修改action的属性
+                  ConSlp.action = ConSlp.T.TEST;
                   return;
                 }));
   }

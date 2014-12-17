@@ -1,0 +1,106 @@
+body
+{
+  font-family: Trebuchet MS;
+
+}
+
+/* image */
+img 
+{ 
+  border: none;
+  }
+
+.menu
+{
+   color: #ffffff; text-decoration: none; font-weight: bold; font-size:20px;
+
+}
+
+/* main contents */
+ #content  
+ {  
+   padding-top : 1px;
+ } 
+
+/* /\* anchor *\/ */
+/* #content a  */
+/* { */
+/*   color : #24306F /\*#214dff*\/ ;		 */
+/*   text-decoration : underline; */
+/*   } */
+
+/* #content a:hover  */
+/* { */
+/*   color : #ce4542; */
+/* } */
+
+/*
+#content h2 
+{ 
+  font-size : 140%;
+  font-weight : bold;
+  }
+*/
+
+#content dt{
+    font-weight: bold;
+}
+
+#content p.note 
+{ 
+  font-size: 70%;
+  text-align: right;
+}
+
+#content hr.footnote
+{ 
+  width: 40%;
+  float:left;
+}
+
+#content table {
+	border-width: 0px 0px 0px 0px;
+	border-spacing: 0px;
+	border-style: outset outset outset outset;
+	border-color: #ce4542;
+	border-collapse: collapse;
+	background-color: white;
+		width : 100%;
+}
+
+#content table th {
+	border-width: 1px;
+	padding: 5px;
+	border-style: solid;
+	border-color: #ce4542;
+	background-color: white;
+/*	-moz-border-radius: 0px; */
+}
+#content table td {
+	border-width: 1px;
+	padding: 5px;
+	border-style: solid;
+	border-color: #ce4542;
+/*	background-color: white; */
+/*	-moz-border-radius: 0px 0px 0px 0px; */
+}
+
+
+/* footnote */
+#footer 
+{ 
+  color:#778;
+  background:#ddd;
+  padding:3px 15px;
+  margin-top: 10px;
+  border:1px solid #778;
+  font-size: 70%;
+  text-align: right;
+  }
+
+#footer a 
+{
+  color:#778;
+  text-decoration : none;
+  }
+

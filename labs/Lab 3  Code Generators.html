@@ -1,0 +1,907 @@
+
+<!-- saved from url=(0074)http://staff.ustc.edu.cn/~bjhua/courses/compiler/2014/labs/lab3/index.html -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=GBK">
+<title>Lab 3: Code Generators</title>
+<link rel="stylesheet" href="./Lab 3  Code Generators_files/labs.css" type="text/css">
+<style type="text/css"></style><style id="style-1-cropbar-clipper">/* Copyright 2014 Evernote Corporation. All rights reserved. */
+.en-markup-crop-options {
+    top: 18px !important;
+    left: 50% !important;
+    margin-left: -100px !important;
+    width: 200px !important;
+    border: 2px rgba(255,255,255,.38) solid !important;
+    border-radius: 4px !important;
+}
+
+.en-markup-crop-options div div:first-of-type {
+    margin-left: 0px !important;
+}
+</style></head>
+
+<body youdao="bind">
+<table width="100%">
+<tbody>
+  <tr>
+<td>
+<h1>Lab 3: Code Generators</h1>
+<hr>
+
+<h3>Lab Overview</h3>
+In this lab, your task is to build code generators into
+<code>Tiger</code> for <code>MiniJava</code>. To be specific, there
+are 4 code generators in this lab: the first one is a 
+C code generator generating ANSI C code, the second one
+is a Java bytecode
+generator targeting Oracle's JVML (this is Java's standard
+target code format), the third one is a Dalvik bytecode generator
+targeting Google's Dalvik virtual machine, and the fourth and last
+one is an x86 code generator targeting x86 chips from both
+Intel and AMD.
+
+<p>
+The first code generator: the C code generator is required. All other
+three code generators: Java bytecode, Dalvik bytecode, and x86 are
+optional. However, you are encouraged to try the three, for it
+will give you deeper knowledge and insight of a code generator.
+
+</p><h3>Getting Started</h3>
+<p>
+First check out the source for Lab3 at:
+</p><pre>  $ <kbd>git commit -am 'my solution to lab2'</kbd>
+  $ <kbd>git checkout -b Lab3 origin/Lab3
+</kbd></pre>
+the first command will commit your changes to Lab2 branch
+to the local
+Git repository, and the second command will
+create a new local Lab3 branch and and check out code
+ into this new
+branch from the remote Lab3 branch.
+
+<p>
+Again, you will need to merge your code from Lab2 into the
+new local Lab3 branch:
+</p><pre>  $ <kbd>git merge Lab2</kbd>
+</pre>
+Don't forget to resolve any conflicts before commit to
+the local Lab3 branch:
+<pre>  $ <kbd>git commit -am 'lab3 init'</kbd>
+</pre>
+
+<p>
+You should first import the new Lab3 code into your Eclipse and
+browse through the source code, which contains these
+new packages:
+<table summary="summary">
+<tbody><tr>
+  <td>&nbsp;&nbsp;&nbsp;&nbsp;</td>
+  <td>
+<table summary="summary">
+<tbody><tr>
+  <td><pre>codegen.C</pre></td><td>&nbsp;&nbsp;</td><td>classes operating on the C AST (translator, pretty printer, etc..)</td>
+</tr>
+<tr>
+  <td><pre>codegen.C.*</pre></td><td>&nbsp;&nbsp;</td><td>data structures defining the C AST</td>
+</tr>
+<tr>
+  <td><pre>codegen.bytecode</pre></td><td>&nbsp;&nbsp;</td><td>classes operating on the Java bytecode AST</td>
+</tr><tr>
+  <td><pre>codegen.bytecode.*</pre></td><td>&nbsp;&nbsp;</td><td>data structures defining the Java bytecode AST</td>
+</tr>
+<tr>
+  <td><pre>codegen.dalvik</pre></td><td>&nbsp;&nbsp;</td><td>classes operating on the Dalvik
+  bytecode AST</td>
+</tr>
+<tr>
+  <td><pre>codegen.dalvik.*</pre></td><td>&nbsp;&nbsp;</td><td>data structures defining the 
+  Dalvik bytecode AST</td>
+</tr>
+<tr>
+  <td><pre>codegen.x86</pre></td><td>&nbsp;&nbsp;</td><td>data structures and classes for 
+  the x86 code generator</td>
+</tr>
+<tr>
+  <td><pre>runtime/*</pre></td><td>&nbsp;&nbsp;</td><td>a simple runtime system</td>
+</tr>
+</tbody></table>
+</td>
+</tr>
+</tbody></table>
+
+</p><h3>Hand-in Procedure</h3>
+When you finished your lab, zip you code and submit to the
+<a href="">school's information system</a>.
+
+<h1>Part A: The C Code Generator</h1>
+The first code generator you'll build will target the C
+programming language, that is, the generator will generate
+ANSI C code which can then be compiled into native code by
+a C compiler. Nevertheless to say, this is NOT the standard Java compilation
+pipeline, because we are generating native code from
+Java directly, instead of Java bytecode. However, it's profitable
+for you to build such a
+C code generator first: you will gain key insights into
+some key techniques in implementing modern OO language features, including
+single inheritance, virtual function tables and dynamic dispatching, etc..
+From a historical prospective, early C++
+compilers used to implement their code
+generators in a way similar to the one in the <code>Tiger</code> compiler
+you're building, one such
+example is Bjarne Stroustrup's
+<a href="http://en.wikipedia.org/wiki/Cfront">CFront compiler</a>, though
+this is not the case for modern
+C++ compilers. As a modern sample compiler for Java, the GNU's
+<a href="http://gcc.gnu.org/java/">GCJ</a> compiler for Java can generate
+native code directly.
+
+<h3>Abstract Syntax Trees for C</h3>
+The first step in designing and implementing a C code generator is
+to teach the <code>Tiger</code> compiler what the
+C programming language is (although
+we only need a subset of C). For this purpose, we should first
+design a set of data structures to represent the
+abstract syntax tree for (the chosen subset of) the C programming
+language, much like the abstract
+syntax for Java in the previous lab. 
+<div class="required">
+<p><span class="header">Exercise 1.</span>
+Browse through the code in all packages <code>codegen.C.*</code>,
+such as <code>codegen.C.exp</code> or
+<code>codegen.C.stm</code> etc.. Make sure you understand
+the relationship between these data structures
+and the corresponding C syntax. For those not familiar with C, the best
+reference for the C language is <i><a href="http://en.wikipedia.org/wiki/The_C_Programming_Language">The C Programming Language</a></i>
+by Brian Kernighan and Dennis Ritchie (widely known as 'K&amp;R'). Pick up this book
+and read it. (Trust us, for any serious programmers, C is her
+indispensable tool (friend).)
+</p></div>
+
+In the file <code>codegen.C.TranslateVisitor.java</code> resides the code for the C
+code generator. For now, the code in this file is incomplete (it's
+your job next to fill in the missing code), however, we
+have offered sufficient code to compile the test case
+<code>Fac.java</code>.
+
+<div class="required">
+<p><span class="header">Exercise 2.</span>
+Compile this project and run the the Tiger compiler to compile
+the <code>Fac.java</code> test case:
+</p><pre>  $ <kbd>java -cp bin Tiger -testFac</kbd>
+</pre>
+which will generate C code in an output
+ file <code>a.c</code>. Browse through
+the generated C code in the file <code>a.c</code>, for now,
+you don't need to understand
+ details
+of the generated program <code>a.c</code>, just make sure you
+understand the relationship
+between the C program in <code>a.c</code> and the abstract syntax tree data
+structure for C (from exercise 1).
+</div>
+
+In the following, we will make extensive use of pretty printing in debugging
+the code generator for C. The file <code>codegen.C.PrettyPrintVisitor.java</code>
+contains the pretty printing code for C.
+<div class="required">
+<p><span class="header">Exercise 3.</span>
+Finish this printer by filling in the missing code
+in some methods (as before, methods with empty bodies). As the output
+C code will be further compiled by a C compiler, so pay special
+attention to the C syntax constraints.
+</p></div>
+For now, don't worry about testing your pretty printer, for
+it will be painful to write C abstract syntax trees by hand. In the
+next, you can test your pretty printer along with the C code 
+generator.
+
+<h3>Virtual Function Tables</h3>
+Given the above abstract syntax tree for C, it will be relatively
+easy to write another visitor which traverses the Java abstract syntax tree
+and builds a correspondingly (equivalent) C abstract syntax tree for C.
+However, one must
+pay attention to some special features of OO languages: the class inheritance and
+virtual method dispatch. 
+
+<p>
+Java only allows single inheritance, so the
+inheritance relationship between all classes forms a tree with the
+sole <code>Object</code> as the root class. The first question one
+must answer is what fields and methods a class may contain, that is, one
+should calculate, for each class, the fields and methods for that
+class. The key point to note here is that the fields and methods in
+a given class <i>C</i> include not only the ones
+directly declared in that class <i>C</i>, but also the ones inherited
+from the current class <i>C</i>'s
+parent class, and from the parent's parent class, and so on, until
+reaching the tree root class <code>Object</code>. So, the inheritance
+relationship are cascaded.
+
+</p><p>
+As Java only allows single inheritance, so the prefixing
+algorithm works well for this. The basic
+idea of the prefixing algorithm can be illustrated by the following
+pseudo-code:
+</p><pre>  void prefixing ()
+  {
+    build the inheritance tree <i>t</i> for all classes;     // every class is a tree vertex, with "Object" as the tree root
+    foreach (class <i>C</i> in the tree <i>t</i>, in a BFS order) {    // visit the tree "t" in a breadth first order
+        make a fresh empty class <i>NewC</i>;
+        copy all fields from <i>C</i>'s parent into <i>NewC</i>;
+        append all fields from <i>C</i> to <i>NewC</i>;
+        copy all methods from <i>C</i>'s parent into <i>NewC</i>;
+        append all methods from <i>C</i> to <i>NewC</i>;  // what about method overriding?
+        delete the class <i>C</i>;
+    }
+  }
+</pre>
+This algorithm first builds an inheritance tree <i>t</i>, with each
+tree vertex being a Java class. Then one can visit the
+inheritance tree in a breadth-first order (BFS), when one
+come to a tree vertex with class <i>C</i>, one builds a new
+
+
+<p>
+There is a subtlety in this algorithm: in order to
+compile method
+overriding correctly, one should overwrite the corresponding
+method slots from the parent class, instead of appending it to
+the methods in the parent class. By the word "corresponding", we
+mean methods with same names (as MiniJava does not allow method
+overloading).
+
+</p><div class="required">
+<p><span class="header">Exercise 4.</span>
+For the two Java classes below:
+</p><pre>class A{
+  int x;
+  int y;
+  void f(){}
+  void g(){}
+}
+class B extends A{
+  int x;
+  int z;
+  void h(){}
+  void g(){}
+}
+</pre>
+Write down the new classes <i>NewA</i> and <i>NewB</i>, after one
+ apply the prefixing algorithm on
+these two classes <i>A</i> and <i>B</i>. Can we put the field <code>z</code> before the
+field <code>y</code>? Why or why not?
+</div>
+
+<p>
+The prefixing algorithm will make all classes <i>closed</i>, that is, no class will
+inherit from any other classes, and all references to
+instance variables and methods will be limited to the
+current class.
+
+</p><p>
+The current implementation of the prefixing algorithm in the Tiger
+compiler makes use of a slightly different algorithm than the
+algorithm above. The algorithm in the Tiger compiler makes use
+of table to store all the inheritance tree nodes (the definition
+of the table is in the file <code>codegen.C.ClassTable.java</code>). Essentially, this
+table is a mapping from class name to the class'
+containing fields and methods. And the <code>inherit</code> method
+in that class takes as input a class name <code>c</code> and calculates
+all fields and methods for that class <code>c</code>.
+</p><div class="required">
+<p><span class="header">Exercise 5.</span>
+Read the code in the method <code>inherit</code> in the class
+ <code>codegen.C.ClassTable.java</code> and make sure that you
+ understand how it can
+calculate all fields and methods for a given class. Especially, how
+are methoding overridings addressed?
+</p></div>
+
+<div class="challenge">
+<p><span class="header">Challenge!</span>
+The current algorithm used by the method
+<code>inherit</code>, though correct, is very inefficient. 
+Consider this Java sample program:
+</p><pre>  class C1{
+    int x1;
+  }
+  class C2 extends C1{
+    int x2;
+  }
+  ...
+  class Cn extends Cn-1{
+    int xn;
+  }
+</pre>
+For this program, the computation complexity of the method
+<code>inherit</code>
+will be 1+2+...+n = O(n<sup>2</sup>). Propose a linear
+time algorithm to implement prefixing. Then try to implement your algorithm
+in your Tiger compiler (so that your Tiger compiler can compiler large Java
+programs with very deep inheritance chains).
+</div>
+
+<h3>Generating C from Java</h3>
+Now we are going to generate C code from Java, and the visitor
+for this resides in the file
+<code>codegen.C.TranslateVisitor.java</code>. This visitor
+scans a program in two passes: in the first pass, this visitor
+will scan all classes and calculate an inheritance table (just as
+discussed above), and the table will be used 
+in the second pass: translating various Java
+features into appropriate C features. 
+<div class="required">
+<p><span class="header">Exercise 6.</span>
+Finish the methods in
+<code>codegen.C.TranslatorVisitor.java</code>, by filling in the
+missing code. (Again, you should fill in those methods with
+empty bodies.)
+</p></div>
+<p>
+To this point, your Tiger compiler should compile any legal
+MiniJava program to a corresponding legal C program. You
+should test your
+compiler thoroughly before continuing. For instance, to
+test your Tiger compiler on the test case
+<code>test/Factorial.java</code>, just compile the MiniJava
+program like this:
+</p><pre>  $ <kbd>java -cp bin Tiger ../test/Factorial.java -codegen C</kbd>
+</pre>
+which will generate a C file <code>Factorial.java.c</code>, and
+then you can compile the generated C file:
+<pre>  $ <kbd>gcc -c Factorial.java.c</kbd>
+</pre>
+if your implementation is correct, there should be no errors
+(and even no warnings) in the above two steps.
+
+<p>
+Fix any possible bugs and don't forget to do
+<a href="http://en.wikipedia.org/wiki/Regression_testing">regression testing</a>. 
+
+</p><h3>A Minimal Runtime</h3>
+To compile the generated C file into final executables, one need
+to write a <a href="http://en.wikipedia.org/wiki/Run-time_system">run-time system</a>. In
+its general meaning, the
+terminology <i>runtime</i> may refer to any possible
+forms of supporting facilities a compiler generated
+binaries needs: libraries, garbage collectors, debugging supports and
+so on. In this part of the lab, you
+will implement a minimal runtime system that only include the preliminary
+functionality. In
+future labs, you'll enhance this runtime system with more fancier features by adding
+more functionalities, such as a garbage collector.
+
+<p>
+Browse through the directory <code>runtime/</code>, in which resides the minimal
+runtime system we offered you. You may find:
+<table summary="summary">
+<tbody><tr>
+  <td>&nbsp;&nbsp;&nbsp;&nbsp;</td>
+  <td>
+<table summary="summary">
+<tbody><tr>
+  <td><pre>gc.c</pre></td><td>code for the garbage collector</td>
+</tr>
+<tr>
+  <td><pre>lib</pre></td><td>code for the library</td>
+</tr>
+<tr>
+  <td><pre>main.c</pre></td><td>program entry point</td>
+</tr><tr>
+  <td><pre>runtime.c</pre></td><td>a wrapper</td>
+</tr>
+</tbody></table>
+</td>
+</tr>
+</tbody></table>
+
+Especially, the file
+<code>gc.c</code> contains the preliminary skeleton code for
+a garbage collector (though for now, it is a shame
+to call it a garbage collector because it just
+allocates memory but never reclaims them).
+</p><div class="required">
+<p><span class="header">Exercise 7.</span>
+Finish file <code>gc.c</code>, by filling in missing code. For
+now, you can just allocate memory for objects and arrays but 
+don't worry about memory reclamation issues, which
+is the task of next lab.
+</p></div>
+Now, you can link this runtime system into the C file generated
+from your Tiger compiler to produce the executables. For instance, for
+the above generated <code>Factorial.java.c</code>, you may run:
+<pre>  $ <kbd>gcc Factorial.java.c runtime/runtime.c</kbd>
+</pre>
+which will produce an executable <code>a.out</code> (or <code>a.exe</code>
+on Windows).
+
+<p>
+It will be very boring to type various commands on the prompt
+for the entire compilation pipeline: Tiger compiling, gcc compiling, linking. etc..
+A much more convenient way to do this is to add some glue code
+into Tiger so that it can do all these steps in an automatic
+manner.  
+</p><div class="required">
+<p><span class="header">Exercise 8.</span>
+Add some glue code into the file <code>Tiger.java</code>, which performs
+compiling MiniJava to C, compiling the generated C and linking with
+the runtime, etc. in an automatic manner. With this, you
+don't need to type the
+above commands manually. You may
+find the <a href="http://docs.oracle.com/javase/6/docs/api/java/lang/Runtime.html">
+Java runtime</a> class useful.
+</p></div>
+<p>
+This completes the C code generator. To this point, your Tiger
+compiler can generate executables for
+any legal MiniJava programs. Don't forget to test your Tiger compiler
+thoroughly.
+
+
+
+
+
+
+
+
+
+
+
+</p><h1>Part B: The Java Bytecode Generator</h1>
+In this part of the lab, your job is to design and implement a
+code generator generating 
+<a href="http://en.wikipedia.org/wiki/Java_bytecode">Java bytecode</a>
+ targeting the 
+<a href="http://en.wikipedia.org/wiki/Java_virtual_machine">Java virtual
+machine (JVM)</a>. Java bytecode
+is designed by Sun (now Oracle) and is the standard
+target code for Java. Though there are
+<a href="http://en.wikipedia.org/wiki/List_of_Java_virtual_machines">many JVMs</a> available, the one
+we will use in the lab is the 
+<a href="http://en.wikipedia.org/wiki/HotSpot">HotSpot</a> JVM developed by Oracle (so you
+don't need to do further work of installation or configuration, as we have
+been using HotSpot to compile
+the Tiger compiler). However, there
+is nothing special with HotSpot, you can use other JVMs as
+long as they conform to the 
+<a href="http://docs.oracle.com/javase/specs/jvms/se7/html/">JVM specification</a>.
+
+<h3>Abstract Syntax for Java Bytecode</h3>
+Just like implementing the code generator for C, the first
+step in implementing a Java bytecode generator is to design
+a set of data structures for
+representing abstract syntax trees of Java bytecode. However, some
+difficulties must be addressed before doing so: first, the standard
+Java bytecode instruction set
+contains
+<a href="http://en.wikipedia.org/wiki/Java_bytecode_instruction_listings">202 instructions</a>, 
+which, nevertheless to say, are
+much more than we actually need to compile MiniJava (for
+instance, we don't need
+bytecode instructions for floating point-related operations); second, the
+official
+<a href="http://docs.oracle.com/javase/specs/jvms/se7/html/">Java bytecode specification</a>
+from Sun actually only
+specifies
+binary forms (i.e., a binary string of 0's and 1's) of the
+bytecode instructions, which is good for JVM execution but
+bad for compiler to generate code for, as the instructions
+in binary forms
+are harder to generate and process.
+
+<p>
+The first difficulty is easy to resolve: one just choose, from the
+Java bytecode instruction set, a subset that is enough to compile
+the MiniJava subset of Java. It's your job next to figure out
+such a subset of the Java bytecode instructions.
+
+</p><p>
+To resolve the second difficulty, one can
+choose a Java bytecode assembler which can assemble 
+instructions in readable text form into binary forms which can be
+executed by a JVM. This process is very much like that
+a traditional assembler assembles assembly program
+into binaries. With the bytecode assembler, your
+Tiger compiler can generate text form Java bytecode instructions and
+leave the tedious work of assembling to the bytecode
+assembler. Nevertheless to say, writing a bytecode assembler
+from scratch is, though conceptually simple, tedious and
+too much work. Fortunately, there are some mature third party assembler
+that you can use in your Tiger compiler. To be specific, the Java
+bytecode assembler you'll
+use in this lab is called Jasmin. There is no specific reason
+why we choose Jasmin among many such assemblers. But Jasmin
+has been the oldest Java bytecode assembler and has been used
+widely in many projects. Jasmin has become the de-facto assembly format
+for Java bytecode.
+
+</p><div class="required">
+<p><span class="header">Exercise 9.</span>
+Take a look at the <a href="http://jasmin.sourceforge.net/">
+Jasmin homepage</a> and read the <a href="http://jasmin.sourceforge.net/guide.html">user
+guide</a> to familiarize yourself with how Jasmin works. As a test, you 
+should compile and run the
+<a href="http://jasmin.sourceforge.net/about.html"><code>HelloWorld</code></a>
+bytecode program. You can use the HotSpot JVM from Sun to run
+the generated Java classes.
+</p></div>
+
+As we are using Jasmin assembler to assemble the Java bytecode, so
+it will be very convenient to design the Java bytecode abstract
+syntax tree data structures according to the Jasmin syntax.
+<div class="required">
+<p><span class="header">Exercise 10.</span>
+The package <code>codegen.bytecode.*</code>
+contains the data structures to represent Java
+bytecode abstract syntax trees. You may want to refer
+to the <a href="http://jasmin.sourceforge.net/xt.html">Jasmin XT</a>
+syntax for this. The package <code>codegen.bytecode.stm.*</code>
+contains the abstract syntax for Java bytecode instructions. You may want to
+refer to the <a href="http://cs.au.dk/~mis/dOvs/jvmspec/ref-Java.html">Java
+Virtual Machine online instruction reference</a>
+for a detailed explanation of the syntax and semantics for each
+instruction. It should be easy to know which class represents
+which instruction, because they have the same name (for instance, the
+<code>New.java</code> class represents the
+<a href="http://cs.au.dk/~mis/dOvs/jvmspec/ref-new.html"><code>new</code></a>
+instruction. Make sure you understand all the existing code base before
+continuing. When in doubt, refer to the
+<a href="http://docs.oracle.com/javase/specs/jvms/se7/html/index.html">official JVM
+manual</a> (chapter 6). 
+
+</p><p>
+A final word of reminder, the classes in the
+<code>codegen.bytecode.stm.*</code> package we offered you
+is NOT sufficient to
+compile the MiniJava language. It's your task, in the
+following, to figure out what other instructions are
+necessary and how to implement them.
+</p></div>
+<p>
+
+</p><h3>Generating Java Bytecode</h3>
+In this part, you'll write the Java bytecode generator for
+Tiger. This generator is (once again) a visitor which
+translates the 
+Java syntax tree into the Java bytecode syntax tree. For this
+purpose, you should have a thorough understanding of
+how a JVM works and especially how to compile
+Java features to corresponding Java bytecode feature. The
+<a href="http://docs.oracle.com/javase/specs/jvms/se7/html/jvms-3.html">chapter 3</a>
+of the JVM specification documents the compiling techniques
+from Java to Java bytecode, read this document if
+you haven't.
+
+<div class="required">
+<p><span class="header">Exercise 11.</span>
+Finish the Java bytecode generator in the class
+<code>codegen.bytecode.TranslateVisitor.java</code>. Feel free to modify
+other parts of your Tiger compiler when necessary: the Java bytecode syntax
+tree, the pretty
+printer, the Java abstract syntax tree, the elaborator, and so on.
+</p></div>
+For the generated Java bytecode, use Jasmin to assemble it and
+then use a JVM to run it. You don't need to
+write runtime system or garbage collectors, for they come with the
+JVM (for free).
+
+<div class="challenge">
+<p><span class="header">Challenge!</span>
+If your Java bytecode generator contains any bugs, it's often the case
+that the generated bytecode will behave incorrectly in the following
+ways:
+</p><ul>
+<li>the generated Java bytecode doesn't compile (rejected by the Jasmin assembler);
+</li><li>the generated Java bytecode doesn't verify (rejected by any standards-compliant <a href="http://asm.ow2.org/">class verifier</a>);
+</li><li>the generated Java bytecode doesn't run (rejected by the JVM).
+</li></ul>
+For these cases, the
+diagostic messages will be helpful for you to locate where
+the bugs are and what they are. However, 
+is's also helpful to have more debugging facilities, here are some
+directions you can go:
+<ul>
+<li>Modify your Java bytecode generator to generate debuggable
+Java bytecode. For instance, you can annotate the generated Java
+bytecode with the source program being compiled. Here is one example:
+for the Java expression
+<code>1+2</code>, your
+code generator may generate this code (expressions generated
+as comments followed by the instructions generated for
+it):
+<pre>  ; 1 + 2
+  ldc 1
+  ldc 2
+  add
+</pre>
+</li><li>Use Jasmin's built-in debugging facilities: such as
+the <code>-g</code> option and the <code>.line</code>
+directive.
+</li><li>Use some third party debuggin tools, such as
+<a href="http://www.drgarbage.com/bytecode-visualizer.html">
+bytecode-visualizer</a>.
+</li></ul>
+Implement some of the ideas into your Tiger compiler. 
+</div>
+
+<div class="challenge">
+<p><span class="header">Challenge!</span>
+There is a weird static constraint on the code size of a method, to quote
+from the
+<i><a href="http://docs.oracle.com/javase/specs/jvms/se7/html/jvms-4.html#jvms-4.9">
+Java Virtual Machine Specification</a></i>, section 4.9.1:
+</p><pre>     the value of code_length item must be less than 65536.
+</pre>
+that is, the generated Java bytecode for any Java methods should
+be less than 65536 bytes. This makes it difficult, if not impossible, to
+compile a very large Java method (for instance, the Monster class
+from Lab 1). Propose some techniques to make compilation of
+large methods possible, and try to implement into your Tiger
+compiler so that your Tiger compiler can compile any large
+Java programs. 
+</div>
+
+
+
+
+
+
+<h1>Part C: The Dalvik Bytecode Generator</h1>
+In this part of the lab, your job is to design and implement a
+code generator generating 
+<a href="http://www.netmite.com/android/mydroid/dalvik/docs/dalvik-bytecode.html">Dalvik bytecode</a>
+ targeting the 
+<a href="http://en.wikipedia.org/wiki/Dalvik_(software)">Dalvik virtual
+machine (DVM)</a>. Dalvik bytecode
+is designed by Google and is the standard
+target code on the Android platform. There are many DVMs implementations
+available, for instance, the Dalvik VM from Google,
+<a href="http://en.wikipedia.org/wiki/Dalvik_Turbo_virtual_machine">the Dalvik Turbo</a>
+from Myriad Group, the <a href="https://code.google.com/p/android-dalvik-vm-on-java/">
+Dalvik-on-Java VM</a> and so on. The one
+we will use in the lab is the 
+<a href="https://code.google.com/p/dalvik/">Google Dalvik</a>, so before
+doing the rest parts of this lab, you should first install the
+<a href="http://developer.android.com/sdk/index.html">Android SDK</a>. 
+Then follow the instructions in the above link to set up
+your eclipse appropriately and make sure your virtual
+devices work properly. And if you happen to have some
+Android devices: phones, pads, etc., it's OK to use them, but
+don't forget to enable the "debugging mode" on your devices.
+
+<h3>Abstract Syntax for Dalvik Bytecode</h3>
+Just like implementing the code generator for C, the first
+step in implementing a Dalvik bytecode generator is to design
+a set of data structures for
+representing abstract syntax trees of Dalvik bytecode. However, some
+difficulties must be addressed before doing so: first, the standard
+Dalvik bytecode instruction set
+contains
+<a href="http://www.netmite.com/android/mydroid/dalvik/docs/dalvik-bytecode.html">more than 200 instructions</a>, 
+which, nevertheless to say, are
+much more than we actually need to compile MiniJava (for
+instance, we don't need
+bytecode instructions for floating point-related operations); second, the
+official
+<a href="http://www.netmite.com/android/mydroid/dalvik/docs/dalvik-bytecode.html">Dalvik bytecode specification</a>
+from Google actually only
+specifies
+binary forms (i.e., a binary string of 0's and 1's) of the
+bytecode instructions, which is good for DVM execution but
+bad for compiler to generate code for, as the instuctions
+in binary forms
+are harder to generate and process.
+
+<p>
+The first difficulty is easy to resolve: one just choose, from the
+Dalvik bytecode instruction set, a subset that is enough to compile
+the MiniJava subset of Java. It's your job next to figure out
+such a subset of the Dalvik bytecode instructions.
+
+</p><p>
+To resolve the second difficulty, one can
+choose a Dalvik bytecode assembler which can assemble 
+instuctions in readable text form into binary forms which can be
+executed by a DVM. This process is very much like that
+a traditional assembler assembles assembly program
+into binaries. With the bytecode assembler, your
+Tiger compiler can generate text form Dalvik bytecode instructions and
+leave the tedious work of assembling to the bytecode
+assembler. Nevertheless to say, writing a bytecode assembler
+from scratch is, though conceptually simple, tedious and
+too much work. Fortunately, there are some mature third party assembler
+that you can use in your Tiger compiler. To be specific, the Dalvik
+bytecode assembler you'll
+use in this lab is called Smali. There is no specific reason
+why we choose Smali among many such assemblers. But Smali
+has been the most popular Dalvik bytecode assembler and has been used
+widely in many projects. Smali has become the de-facto assembly
+format for Dalvik bytecode.
+</p><div class="required">
+<p><span class="header">Exercise 12.</span>
+Take a look at the <a href="https://code.google.com/p/smali/">
+Smali homepage</a> and familiarize yourself with how Smali works. As a test, you 
+should compile and run the
+<a href="https://code.google.com/p/smali/source/browse/examples/HelloWorld/HelloWorld.smali"><code>HelloWorld</code></a>
+bytecode program. You can use the Dalvik VM from Google to run
+the generated dex classes. Suppose you have put the code
+in the file <code>HelloWorld.smali</code>, then run these commands:
+</p><pre>  // assemble the "HelloWorld.smali" to "classes.dex"
+  $ <kbd>java -jar smali.jar -o classes.dex HelloWorld.smali</kbd>
+  // compress the .dex to a package
+  $ <kbd>zip HelloWorld.zip classes.dex</kbd>
+  // push the package to your (virtual) Android devices
+  $ <kbd>adb push HelloWorld.zip /data/local</kbd>
+  // run the program using the Dalvik VM
+  $ <kbd>adb shell dalvikvm -cp /data/local/HelloWorld.zip HelloWorld</kbd>
+</pre>
+which should print "Hello world!" terminated by a new line.
+</div>
+
+As we are using Smali assembler to assemble the Dalvik bytecode, so
+it will be very convenient to design the Dalvik bytecode abstract
+syntax tree data structures according to the Smali syntax.
+<div class="required">
+<p><span class="header">Exercise 13.</span>
+The package <code>codegen.bytecode.*</code>
+contains the data structures to represent Smali
+bytecode abstract syntax trees. However, it seems that the Smali
+home page doesn't offer an official reference manual on the 
+syntax it uses. So you have to read
+<a href="https://code.google.com/p/smali/source/browse/smali/src/main/jflex/smaliLexer.flex">the Smali source code</a>
+to famaliarize yourself with the syntax. The package <code>codegen.bytecode.stm.*</code>
+contains the abstract syntax for Dalvik bytecode instructions. You may want to
+refer to the <a href="http://www.netmite.com/android/mydroid/dalvik/docs/dalvik-bytecode.html">official
+Google reference manual</a>
+for a detailed explanation of the syntax and semantics for each
+instruction. It should be easy to know which class represents
+which instruction, because they have the same name (for instance, the
+<code>NewInstance.java</code> class represents the
+<a><code>new-instance (opcode 0x22)</code></a>
+instruction. Make sure you understand all the existing code base before
+continuing. When in doubt, refer to the
+<a href="http://www.netmite.com/android/mydroid/dalvik/docs/dalvik-bytecode.html">official Google
+manual</a>. 
+
+</p><p>
+A final word of reminder, the classes in the
+<code>codegen.bytecode.stm.*</code> package we offered you
+is NOT sufficient to
+compile the MiniJava language. It's your task, in the
+following, to figure out what other instructions are
+necessary and how to implement them.
+</p></div>
+<p>
+
+</p><h3>Generating Dalvik Bytecode</h3>
+In this part, you'll write the Dalvik bytecode generator for
+Tiger. This generator is (once again) a visitor which
+converts the 
+Java syntax tree into the Dalvik bytecode syntax tree. For this
+purpose, you should have a thorough understanding of
+how a DVM works and especially how to compile
+Java features to corresponding Dalvik bytecode feature. The
+<a href="http://docs.oracle.com/javase/specs/jvms/se7/html/jvms-3.html">chapter 3</a>
+of the JVM specification documents the compiling techniques
+from Java to Java bytecode, read this document if
+you haven't.
+
+<div class="required">
+<p><span class="header">Exercise 14.</span>
+Finish the Dalvik bytecode generator in the class
+<code>codegen.dalvik.TranslateVisitor.java</code>. Feel free to modify
+other parts of your Tiger compiler when necessary: the Dalvik bytecode syntax
+tree, the pretty
+printer, the Java abstract syntax tree, the elaborator, and so on.
+</p></div>
+For the generated Dalvik bytecode, use Smali to assemble it, push it 
+to your Android devices and then run it with Dalvik. You don't need to
+write runtime system or garbage collectors, for they come with the
+Dalvik VM (for free).
+
+<div class="challenge">
+<p><span class="header">Challenge!</span>
+If your Java bytecode generator contains any bugs, it's often the case
+that the generated bytecode will behave incorrectly in the following
+ways:
+</p><ul>
+<li>the generated Dalvik bytecode doesn't compile (rejected by the Smali assembler);
+</li><li>the generated Dalvik bytecode doesn't verify (rejected by any standards-compliant <a href="http://asm.ow2.org/">class verifier</a>);
+</li><li>the generated Dalvik bytecode doesn't run (rejected by the DVM).
+</li></ul>
+For these cases, the
+diagnostic messages will be helpful for you to locate where
+the bugs are and what they are. However, 
+it's also helpful to have more debugging facilities, here are some
+directions you can go:
+<ul>
+<li>Modify your Dalvik bytecode generator to generate debuggable
+Dalvik bytecode. For instance, you can annotate the generated Dalvik
+bytecode with the source program being compiled. Here is one example:
+for the Java expression
+<code>1+2</code>, your
+code generator may generate this code (expressions generated
+as comments followed by the instructions generated for
+it):
+<pre>  ; 1 + 2
+  const v5, 1
+  const v6, 2
+  add-int v7, v5, v6
+</pre>
+</li><li>Use Smali's built-in debugging facilities: such as
+the <code>-T</code> and <code>-V</code> options.
+</li><li>Use some third party debuggin tools, such as
+<a href="http://www.drgarbage.com/bytecode-visualizer.html">
+bytecode-visualizer</a>.
+</li></ul>
+Implement some of the ideas into your Tiger compiler. 
+</div>
+
+<div class="challenge">
+<p><span class="header">Challenge!</span>
+There is a weird static constraint on the number of available
+registers in a method, to quote
+from the
+<i><a href="http://docs.oracle.com/javase/specs/jvms/se7/html/jvms-4.html#jvms-4.9">
+Bytecode for the Dalvik VM</a></i>, General design:
+</p><pre>     Because, in practice, it is uncommon for a method to need 
+     more than 16 registers, and because needing more than eight 
+     registers is reasonably common, many instructions may only 
+     address the first 16 registers. When reasonably possible, 
+     instructions allow references to up to the first 256 registers. 
+     In cases where an instruction variant isn't available to address 
+     a desired register, it is expected that the register contents 
+     get moved from the original register to a low register (before 
+     the operation) and/or moved from a low result register to a high 
+     register (after the operation).
+</pre>
+that is, the generated Dalvik bytecode for any Java methods can use
+at most 256 registers. This makes it difficult, if not impossible, to
+compile a Java method with many variables (for instance, the Monster class
+from Lab 1). Propose some techniques to make compilation of
+such methods possible, and try to implement into your Tiger
+compiler so that your Tiger compiler can compile any
+Java programs. (You may refer to the DX compiler source code 
+on how Google did this.)
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<h1>Part D: An x86 Generator</h1>
+One will get real satisfaction if one can generate code
+for real raw machine. In this part of the lab, you'll design
+and implement another
+code generator targeting the x86 instruction set architecture. We'll
+give no code here, so it's your duty to write the code
+from scratch.
+
+<div class="challenge">
+<p><span class="header">Challenge!</span>
+Write an x86 code generator. To keep things simple, you can
+use the x86 machine as a stack machine (just like the JVM), so
+that you can borrow most your code from the 2nd part of the lab here.
+</p></div>
+
+<h3>Handin</h3>
+This completes the lab. Remember to hand in your solution to 
+the information system.
+
+</td>
+</tr>
+  
+</tbody>
+</table>
+
+
+
+
+</body></html>

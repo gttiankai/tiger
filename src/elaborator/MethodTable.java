@@ -1,7 +1,10 @@
 package elaborator;
 
 import java.util.LinkedList;
+import java.util.Map;
+import java.util.Set;
 
+import ast.Ast;
 import ast.Ast.Dec;
 import ast.Ast.Type;
 import util.Todo;
@@ -42,12 +45,17 @@ public class MethodTable
   // return null for non-existing keys
   public Type.T get(String id)
   {
+
     return this.table.get(id);
   }
 
-  public void dump()
+  public void dump(String methodName)
   {
-    new Todo();
+    Set< Map.Entry<String, Type.T> > set = table.entrySet();
+    System.out.format("dump of methodT %s:\n",methodName);
+    for (Map.Entry<String, Type.T> entry : set){
+      System.out.format("\t%s %s\n", entry.getKey(), entry.getValue().toString());
+    }
   }
 
   @Override

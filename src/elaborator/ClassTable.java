@@ -3,10 +3,17 @@ package elaborator;
 import ast.Ast.Type;
 import util.Todo;
 
+import java.util.Map;
+import java.util.Set;
+
 public class ClassTable
 {
   // map each class name (a string), to the class bindings.
   private java.util.Hashtable<String, ClassBinding> table;
+
+  public java.util.Hashtable<String, ClassBinding> getTable(){
+    return this.table;
+  }
 
   public ClassTable()
   {
@@ -66,23 +73,29 @@ public class ClassTable
 
   // get type of some method
   // return null for non-existing method
-  public MethodType getm(String className, String mid)
+  public MethodType getMethodType(String className, String methodId)
   {
     ClassBinding cb = this.table.get(className);
-    MethodType type = cb.methods.get(mid);
+    MethodType type = cb.methods.get(methodId);
     while (type == null) { // search all parent classes until found or fail
       if (cb.extendss == null)
         return type;
 
       cb = this.table.get(cb.extendss);
-      type = cb.methods.get(mid);
+      type = cb.methods.get(methodId);
     }
     return type;
   }
 
   public void dump()
   {
-    new Todo();
+
+    Set< Map.Entry<String, ClassBinding> > set = table.entrySet();
+    System.out.println("dump from the ClassTable");
+
+    for(  Map.Entry<String, ClassBinding>  entry : set){
+      System.out.format("\t%s %s\n", entry.getKey(), entry.getValue().toString());
+    }
   }
 
   @Override

@@ -22,6 +22,4 @@ public class Samples
 
   public static Stm.T dividebyzero =
       new Print (new Last (new Op(Exp.OP_T.DIVIDE, new Num (1), new Num(0))));
-  
-  
 }
