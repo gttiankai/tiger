@@ -1,5 +1,4 @@
 package codegen.C;
-
 import codegen.C.Ast.Class.ClassSingle;
 import codegen.C.Ast.Dec;
 import codegen.C.Ast.Dec.DecSingle;
@@ -43,17 +42,17 @@ public class PrettyPrintVisitor implements Visitor
 
   public PrettyPrintVisitor()
   {
-    this.indentLevel = 2;
+    this.indentLevel = 4;
   }
 
   private void indent()
   {
-    this.indentLevel += 2;
+    this.indentLevel += 4;
   }
 
   private void unIndent()
   {
-    this.indentLevel -= 2;
+    this.indentLevel -= 4;
   }
 
   private void printSpaces()
@@ -89,16 +88,27 @@ public class PrettyPrintVisitor implements Visitor
   @Override
   public void visit(Add e)
   {
+    e.left.accept(this);
+    say(" + ");
+    e.right.accept(this);
+    sayln("");
   }
 
   @Override
   public void visit(And e)
   {
+    e.left.accept(this);
+    say("&&");
+    e.left.accept(this);
   }
 
   @Override
   public void visit(ArraySelect e)
   {
+    e.array.accept(this);
+    say("[");
+    e.index.accept(this);
+    say("]");
   }
 
   @Override
@@ -144,6 +154,11 @@ public class PrettyPrintVisitor implements Visitor
   @Override
   public void visit(NewIntArray e)
   {
+    say("int[");
+    e.exp.accept(this);
+    say("] ");
+    say(e.name);
+    sayln(";");
   }
 
   @Override
@@ -157,6 +172,8 @@ public class PrettyPrintVisitor implements Visitor
   @Override
   public void visit(Not e)
   {
+    say("!");
+    e.exp.accept(this);
   }
 
   @Override
@@ -379,6 +396,8 @@ public class PrettyPrintVisitor implements Visitor
       else
         outputName = "a.c";
 
+      System.out.println("the output file is " + outputName);
+
       this.writer = new java.io.BufferedWriter(new java.io.OutputStreamWriter(
           new java.io.FileOutputStream(outputName)));
     } catch (Exception e) {
@@ -419,7 +438,7 @@ public class PrettyPrintVisitor implements Visitor
     this.say("\n\n");
 
     try {
-      this.writer.close();
+       this.writer.close();
     } catch (Exception e) {
       e.printStackTrace();
       System.exit(1);

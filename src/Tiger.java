@@ -4,7 +4,6 @@ import control.Control;
 import lexer.Lexer;
 import lexer.Token;
 import parser.Parser;
-
 import java.io.BufferedInputStream;
 import java.io.FileInputStream;
 import java.io.InputStream;
@@ -20,25 +19,9 @@ public class Tiger {
         // handle command line arguments
         CommandLine cmd = new CommandLine();
         String fname = cmd.scan(args);
-
-        // to test the pretty printer on the "test/Fac.java" program
-        if (testFac) {
-            System.out.println("Testing the Tiger compiler on Fac.java starting:");
-            ast.PrettyPrintVisitor pp = new ast.PrettyPrintVisitor();
-            ast.Fac.progSum.accept(pp);
-            System.out.println("Testing the Tiger compiler on Fac.java finished.");
-            System.exit(1);
-        }
-
-        if (fname == null) {
-            cmd.usage();
-            return;
-        }
-
-        // /////////////////////////////////////////////////////
         // it would be helpful to be able to test the lexer
         // independently.
-        if (Control.ConLexer.test) {
+        if (Control.ConAst.testFac) {
             // to test the pretty printer on the "test/Fac.java" program
             System.out.println("Testing the Tiger compiler on Fac.java starting:");
             ast.PrettyPrintVisitor pp = new ast.PrettyPrintVisitor();
@@ -80,13 +63,15 @@ public class Tiger {
                     break;
             }
             System.out.println("Testing the Tiger compiler on Fac.java finished.");
-            System.exit(1);
+                System.exit(1);
+
         }
 
         if (fname == null) {
             cmd.usage();
             return;
         }
+
         Control.ConCodeGen.fileName = fname;
 
         // /////////////////////////////////////////////////////
@@ -110,9 +95,6 @@ public class Tiger {
             System.exit(1);
         }
         Program.T theAst = null;
-//>>>>>>> Lab2
-
-        // parsing the file, get an AST.
         try {
             fstream = new BufferedInputStream(new FileInputStream(fname));
             parser = new Parser(fname, fstream);
